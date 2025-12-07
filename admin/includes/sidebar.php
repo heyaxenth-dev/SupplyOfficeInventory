@@ -50,13 +50,6 @@
             </a>
         </li>
 
-        <li class="nav-item">
-            <a <?= setActive('settings') ?> href="settings.php">
-                <i class="bi bi-gear"></i>
-                <span>Settings</span>
-            </a>
-        </li>
-
     </ul>
 
 
