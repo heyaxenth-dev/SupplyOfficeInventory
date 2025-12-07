@@ -37,13 +37,6 @@
         </li>
 
         <li class="nav-item">
-            <a <?= setActive('requests') ?> href="requests.php">
-                <i class="bi bi-clipboard-check"></i>
-                <span>Requests</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
             <a <?= setActive('reports') ?> href="reports.php">
                 <i class="bi bi-bar-chart-line"></i>
                 <span>Reports</span>
