@@ -21,29 +21,36 @@ if ($conn->connect_error) {
 
 // Get and sanitize input data
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+$currentUserId = isset($_SESSION['admin_id']) ? intval($_SESSION['admin_id']) : 0;
 
 // Validate ID
 if ($id <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid item ID']);
+    echo json_encode(['success' => false, 'message' => 'Invalid user ID']);
     exit;
 }
 
-// Check if item exists
-$checkSql = "SELECT id, item_name FROM inventory WHERE id = ?";
+// Prevent deleting own account
+if ($id == $currentUserId) {
+    echo json_encode(['success' => false, 'message' => 'You cannot delete your own account']);
+    exit;
+}
+
+// Check if user exists
+$checkSql = "SELECT id, name, email FROM users WHERE id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param("i", $id);
 $checkStmt->execute();
 $result = $checkStmt->get_result();
-$item = $result->fetch_assoc();
+$user = $result->fetch_assoc();
 $checkStmt->close();
 
-if (!$item) {
-    echo json_encode(['success' => false, 'message' => 'Inventory item not found']);
+if (!$user) {
+    echo json_encode(['success' => false, 'message' => 'User not found']);
     exit;
 }
 
 // Prepare SQL statement
-$sql = "DELETE FROM inventory WHERE id = ?";
+$sql = "DELETE FROM users WHERE id = ?";
 $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
@@ -58,12 +65,12 @@ $stmt->bind_param("i", $id);
 if ($stmt->execute()) {
     echo json_encode([
         'success' => true, 
-        'message' => 'Inventory item "' . htmlspecialchars($item['item_name']) . '" has been deleted successfully!'
+        'message' => 'User "' . htmlspecialchars($user['name']) . '" has been deleted successfully!'
     ]);
 } else {
     echo json_encode([
         'success' => false, 
-        'message' => 'Failed to delete inventory item: ' . $stmt->error
+        'message' => 'Failed to delete user: ' . $stmt->error
     ]);
 }
 

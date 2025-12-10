@@ -79,7 +79,7 @@ include 'includes/sidebar.php';
                                     </td>
                                     <td><?php echo $lastRestocked; ?></td>
                                     <td>
-                                        <button class="btn btn-outline-info border-0 view-item"
+                                        <button class="btn btn-sm btn-info border-0 view-item"
                                             data-id="<?php echo $row['id']; ?>"
                                             data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
                                             data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
@@ -95,7 +95,7 @@ include 'includes/sidebar.php';
                                             title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button class="btn btn-outline-primary border-0 edit-item"
+                                        <button class="btn btn-sm btn-primary border-0 edit-item"
                                             data-id="<?php echo $row['id']; ?>"
                                             data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
                                             data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
@@ -109,7 +109,7 @@ include 'includes/sidebar.php';
                                             title="Edit">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger border-0 delete-item"
+                                        <button class="btn btn-sm btn-danger border-0 delete-item"
                                             data-id="<?php echo $row['id']; ?>"
                                             data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
                                             title="Delete">

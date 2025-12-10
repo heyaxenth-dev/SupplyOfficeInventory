@@ -1,7 +1,7 @@
 <!-- Add Inventory Modal -->
-<div class="modal fade" id="addInventoryModal" tabindex="-1" aria-labelledby="addInventoryModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" id="addInventoryModal" tabindex="-1"
+    aria-labelledby="addInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addInventoryModalLabel">Add New Inventory Item</h5>
@@ -431,9 +431,9 @@ $(document).ready(function() {
 </script>
 
 <!-- Edit Inventory Modal -->
-<div class="modal fade" id="editInventoryModal" tabindex="-1" aria-labelledby="editInventoryModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="editInventoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="editInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editInventoryModalLabel">Edit Inventory Item</h5>
@@ -522,9 +522,9 @@ $(document).ready(function() {
 </div>
 
 <!-- View Inventory Modal -->
-<div class="modal fade" id="viewInventoryModal" tabindex="-1" aria-labelledby="viewInventoryModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="viewInventoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="viewInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="viewInventoryModalLabel">

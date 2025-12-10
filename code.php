@@ -71,7 +71,7 @@ if ($result->num_rows > 0) {
                 $_SESSION['admin_department'] = $user['department'];
 
                 // Redirect to admin dashboard
-                header("Location: admin/dashboard.php");
+                header("Location: admin/verification_dashboard.php");
                 exit;
             } else {
                 $_SESSION['status'] = "Error";
@@ -93,7 +93,7 @@ if ($result->num_rows > 0) {
                 $_SESSION['client_department'] = $user['department'];
 
                 // Redirect to staff dashboard
-                header("Location: client/dashboard.php");
+                header("Location: client/verification_dashboard.php");
                 exit;
             } else {
                 $_SESSION['status'] = "Error";

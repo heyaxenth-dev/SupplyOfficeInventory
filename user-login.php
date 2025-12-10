@@ -65,11 +65,16 @@ include 'alert.php';
                                         <label for="yourEmail">Email Address</label>
                                     </div>
 
-                                    <div class="form-floating mb-4">
+                                    <div class="form-floating mb-4 position-relative">
                                         <input type="password" name="password" class="form-control" id="yourPassword"
                                             placeholder="Password" required />
                                         <label for="yourPassword">Password</label>
+
+                                        <!-- Eye Icon -->
+                                        <i class="bi bi-eye-slash toggle-password"
+                                            style="position:absolute; top:50%; right:15px; transform:translateY(-50%); cursor:pointer;"></i>
                                     </div>
+
 
                                     <button class="btn btn-danger w-100 mb-4" name="loginBtn" type="submit">
                                         Login
@@ -96,6 +101,23 @@ include 'alert.php';
         </div>
     </main>
     <!-- End #main -->
+
+    <script>
+    document.querySelector(".toggle-password").addEventListener("click", function() {
+        const passwordInput = document.getElementById("yourPassword");
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            this.classList.remove("bi-eye-slash");
+            this.classList.add("bi-eye");
+        } else {
+            passwordInput.type = "password";
+            this.classList.remove("bi-eye");
+            this.classList.add("bi-eye-slash");
+        }
+    });
+    </script>
+
 
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
             class="bi bi-arrow-up-short"></i></a>

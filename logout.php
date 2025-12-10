@@ -15,6 +15,7 @@ if (isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] == true) {
         unset($_SESSION['admin_email']);
         unset($_SESSION['admin_role']);
         unset($_SESSION['admin_department']); 
+        unset($_SESSION['admin_auth']);
 
     // Redirect to index page
     header("Location: index");

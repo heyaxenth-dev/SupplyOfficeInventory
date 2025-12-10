@@ -22,12 +22,20 @@
     <!-- Sidebar Navigation -->
     <ul class="sidebar-nav" id="sidebar-nav">
 
+
         <li class="nav-item">
+            <a <?= setActive('verification_dashboard') ?> href="verification_dashboard.php">
+                <i class="bi bi-shield-check"></i>
+                <span>Verification Dashboard</span>
+            </a>
+        </li>
+
+        <!-- <li class="nav-item">
             <a <?= setActive('dashboard') ?> href="dashboard.php">
                 <i class="bi bi-grid"></i>
                 <span>Dashboard</span>
             </a>
-        </li>
+        </li> -->
 
         <li class="nav-item">
             <a <?= setActive('inventory') ?> href="inventory.php">
@@ -42,6 +50,7 @@
                 <span>Reports</span>
             </a>
         </li>
+
 
         <li class="nav-item">
             <a <?= setActive('user-manangement') ?> href="user-manangement.php">

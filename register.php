@@ -111,12 +111,20 @@ include 'alert.php';
                                     </div>
                                 </div>
 
-                                <div class="col-12">
+                                <div class="col-12 mt-3">
                                     <div class="form-floating">
                                         <input type="password" name="confirm_password" class="form-control"
-                                            id="yourConfirmPassword" placeholder="Password" required>
+                                            id="yourConfirmPassword" placeholder="Confirm Password" required>
                                         <label for="yourConfirmPassword">Confirm Password</label>
                                         <div class="invalid-feedback">Please enter your confirm password!</div>
+                                    </div>
+                                </div>
+
+                                <!-- Combined checkbox -->
+                                <div class="col-12 mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="showBothPasswords">
+                                        <label class="form-check-label" for="showBothPasswords">Show Passwords</label>
                                     </div>
                                 </div>
 
@@ -139,6 +147,19 @@ include 'alert.php';
 
         </div>
     </main><!-- End #main -->
+
+    <script>
+    document.getElementById("showBothPasswords").addEventListener("change", function() {
+        const passwordInput = document.getElementById("yourPassword");
+        const confirmInput = document.getElementById("yourConfirmPassword");
+
+        const type = this.checked ? "text" : "password";
+        passwordInput.type = type;
+        confirmInput.type = type;
+    });
+    </script>
+
+
 
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
             class="bi bi-arrow-up-short"></i></a>

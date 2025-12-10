@@ -1,0 +1,556 @@
+================================================================================
+FORMAL VERIFICATION ALGORITHM - COMPREHENSIVE DOCUMENTATION
+Supply Office Inventory System
+University of Antique - Hamtic Campus
+================================================================================
+
+PURPOSE
+================================================================================
+
+The Formal Verification Algorithm is an automated data integrity checking system
+designed to ensure the accuracy, consistency, and reliability of inventory data
+stored in the Supply Office Inventory database. It performs comprehensive
+validation checks to identify errors, inconsistencies, and potential issues
+that could compromise the integrity of the inventory management system.
+
+The algorithm serves multiple critical purposes:
+
+1. DATA INTEGRITY ASSURANCE
+   - Ensures inventory quantities are accurate and consistent
+   - Validates that all data relationships are properly maintained
+   - Detects data corruption or inconsistencies before they cause problems
+
+2. BUSINESS RULE ENFORCEMENT
+   - Verifies that inventory status matches actual stock quantities
+   - Ensures stock numbers (SKUs) are unique and properly assigned
+   - Validates that transactions are properly linked to existing items
+
+3. EARLY PROBLEM DETECTION
+   - Identifies issues before they impact daily operations
+   - Flags items that need attention (low stock, missing data)
+   - Prevents cascading errors from propagating through the system
+
+4. AUDIT AND COMPLIANCE
+   - Provides documentation of data quality
+   - Creates audit trails for inventory verification
+   - Supports compliance with inventory management standards
+
+5. OPERATIONAL EFFICIENCY
+   - Automates manual verification processes
+   - Reduces time spent on data quality checks
+   - Enables proactive inventory management
+
+================================================================================
+HOW IT WORKS - EXECUTION FLOW
+================================================================================
+
+1. INITIALIZATION PHASE
+   --------------------
+   - The algorithm is triggered from the Verification Dashboard in the admin panel
+   - PHP endpoint (admin/api/run_verification.php) receives the request
+   - Python script (python/verify_inventory.py) is executed via shell command
+   - Database connection is established using configured credentials
+
+2. DATA COLLECTION PHASE
+   ----------------------
+   - Connects to MySQL database (soi_db)
+   - Retrieves total count of inventory items
+   - Retrieves total count of transactions (if transactions table exists)
+   - Prepares cursor for executing SQL queries
+
+3. VERIFICATION PHASE
+   -------------------
+   The algorithm performs 9 distinct verification checks in sequence:
+
+   CHECK 1: Negative Stock Detection
+   - Searches for items with quantity < 0
+   - This is physically impossible and indicates data corruption
+   - Severity: ERROR (must be fixed immediately)
+
+   CHECK 2: Duplicate Stock Numbers (SKUs)
+   - Identifies multiple items sharing the same stock number
+   - Stock numbers must be unique for proper inventory tracking
+   - Severity: ERROR (causes tracking confusion)
+
+   CHECK 3: Missing Categories
+   - Finds items without category assignments
+   - Categories are important for organization and reporting
+   - Severity: WARNING (data quality issue)
+
+   CHECK 4: Orphan Transactions
+   - Detects transactions that reference non-existent inventory items
+   - Indicates broken referential integrity
+   - Severity: ERROR (data corruption)
+
+   CHECK 5: Stock Quantity Mismatch
+   - Compares current inventory quantity with computed quantity from transactions
+   - Calculates: SUM(IN transactions) - SUM(OUT transactions)
+   - Flags discrepancies between actual and computed stock
+   - Severity: ERROR (accounting inconsistency)
+
+   CHECK 6: Invalid Status Transitions
+   - Checks items marked "Out of Stock" but have quantity > 0
+   - Checks items with quantity = 0 but status is not "Out of Stock"
+   - Ensures status accurately reflects stock levels
+   - Severity: ERROR for first case, WARNING for second case
+
+   CHECK 7: Low Stock Warnings
+   - Identifies items with quantity <= 10 that aren't marked as "Low Stock"
+   - Helps prevent stockouts by flagging items needing reorder
+   - Severity: WARNING (operational recommendation)
+
+   CHECK 8: Missing Stock Numbers
+   - Finds items without stock number assignments
+   - Stock numbers are essential for inventory identification
+   - Severity: WARNING (data completeness issue)
+
+   CHECK 9: Orphan Reservations
+   - Detects reservations referencing non-existent inventory items
+   - Only runs if reservations table exists
+   - Severity: ERROR (data integrity issue)
+
+4. RESULT AGGREGATION PHASE
+   -------------------------
+   - Collects all errors and warnings from each check
+   - Counts total errors and warnings
+   - Determines overall status:
+     * PASS: No errors, no warnings
+     * WARN: No errors, but warnings exist
+     * FAIL: One or more errors found
+     * ERROR: System error during execution
+
+5. OUTPUT GENERATION PHASE
+   -----------------------
+   - Formats results as JSON structure
+   - Includes summary statistics
+   - Lists all errors with detailed information
+   - Lists all warnings with detailed information
+   - Outputs to stdout for PHP to capture
+
+6. RESPONSE HANDLING PHASE
+   ------------------------
+   - PHP captures JSON output from Python script
+   - Parses JSON response
+   - Displays results in Verification Dashboard
+   - Updates UI with status, errors, and warnings
+
+================================================================================
+DETAILED CHECK EXPLANATIONS
+================================================================================
+
+1. NEGATIVE STOCK DETECTION
+   -------------------------
+   Purpose: Physical inventory cannot have negative quantities. This check
+            identifies impossible stock levels that indicate data corruption.
+
+   SQL Query:
+   SELECT id, item_name, stock_number, quantity 
+   FROM inventory 
+   WHERE quantity < 0
+
+   Why It Matters:
+   - Negative stock is physically impossible
+   - Indicates calculation errors or data entry mistakes
+   - Can cause incorrect inventory valuations
+   - May lead to incorrect reorder decisions
+
+   Example Error:
+   "Item 'Ballpen' (Stock: BP001) has negative quantity: -5"
+
+
+2. DUPLICATE STOCK NUMBERS
+   ------------------------
+   Purpose: Each inventory item must have a unique stock number (SKU) for
+            proper identification and tracking.
+
+   SQL Query:
+   SELECT stock_number, COUNT(*) as count, 
+          GROUP_CONCAT(id) as ids, 
+          GROUP_CONCAT(item_name) as names
+   FROM inventory 
+   WHERE stock_number IS NOT NULL AND stock_number != ''
+   GROUP BY stock_number 
+   HAVING count > 1
+
+   Why It Matters:
+   - Stock numbers are primary identifiers
+   - Duplicates cause confusion in tracking
+   - Can lead to incorrect item selection
+   - Violates data normalization principles
+
+   Example Error:
+   "Duplicate stock number 'AC001' found in 2 items"
+
+
+3. MISSING CATEGORIES
+   -------------------
+   Purpose: Categories help organize inventory and generate meaningful reports.
+            Items without categories are harder to manage and report on.
+
+   SQL Query:
+   SELECT id, item_name, stock_number 
+   FROM inventory 
+   WHERE category IS NULL OR category = ''
+
+   Why It Matters:
+   - Categories enable better organization
+   - Required for category-based reporting
+   - Helps in inventory grouping and analysis
+   - Improves data quality and usability
+
+   Example Warning:
+   "Item 'Notebook' (Stock: NB001) has no category assigned"
+
+
+4. ORPHAN TRANSACTIONS
+   -------------------
+   Purpose: Every transaction must reference a valid inventory item. Orphan
+            transactions indicate broken referential integrity.
+
+   SQL Query:
+   SELECT t.id, t.item_id, t.transaction_type, t.quantity, t.transaction_date
+   FROM transactions t
+   LEFT JOIN inventory i ON t.item_id = i.id
+   WHERE i.id IS NULL
+
+   Why It Matters:
+   - Transactions must link to existing items
+   - Orphan transactions indicate deleted items with remaining transactions
+   - Causes data inconsistency
+   - Can lead to accounting discrepancies
+
+   Example Error:
+   "Transaction #123 references non-existent item_id: 999"
+
+
+5. STOCK QUANTITY MISMATCH
+   ------------------------
+   Purpose: The current inventory quantity should match the sum of all
+            transactions. Discrepancies indicate calculation errors or
+            missing transaction records.
+
+   SQL Query:
+   SELECT i.id, i.item_name, i.stock_number, i.quantity as current_quantity,
+          COALESCE(SUM(CASE WHEN t.transaction_type = 'IN' THEN t.quantity 
+                            ELSE -t.quantity END), 0) as computed_quantity
+   FROM inventory i
+   LEFT JOIN transactions t ON i.id = t.item_id
+   GROUP BY i.id, i.item_name, i.stock_number, i.quantity
+   HAVING ABS(i.quantity - computed_quantity) > 0.01
+
+   Why It Matters:
+   - Ensures transaction history matches current stock
+   - Detects missing or incorrect transaction records
+   - Validates accounting accuracy
+   - Critical for audit trails
+
+   Example Error:
+   "Item 'Paper' (Stock: PP001) quantity mismatch: Current=50, Computed=45"
+
+
+6. INVALID STATUS TRANSITIONS
+   ---------------------------
+   Purpose: Inventory status must accurately reflect stock levels. Items
+            marked "Out of Stock" cannot have quantity > 0, and items with
+            quantity = 0 should be marked "Out of Stock".
+
+   SQL Queries:
+   a) SELECT id, item_name, stock_number, quantity, status 
+      FROM inventory 
+      WHERE status = 'Out of Stock' AND quantity > 0
+
+   b) SELECT id, item_name, stock_number, quantity, status 
+      FROM inventory 
+      WHERE quantity = 0 AND status != 'Out of Stock'
+
+   Why It Matters:
+   - Status must reflect reality
+   - Prevents confusion in inventory management
+   - Ensures accurate stock availability information
+   - Critical for automated reorder systems
+
+   Example Errors:
+   - "Item 'Pen' (Stock: PN001) is marked 'Out of Stock' but has quantity: 10"
+   - "Item 'Pencil' (Stock: PC001) has zero quantity but status is 'In Stock'"
+
+
+7. LOW STOCK WARNINGS
+   -------------------
+   Purpose: Identifies items that are running low and should be marked as
+            "Low Stock" to trigger reorder processes.
+
+   SQL Query:
+   SELECT id, item_name, stock_number, quantity, status 
+   FROM inventory 
+   WHERE quantity > 0 AND quantity <= 10 
+     AND status != 'Low Stock' AND status != 'Out of Stock'
+
+   Threshold: 10 units (configurable in code)
+
+   Why It Matters:
+   - Prevents stockouts by early warning
+   - Helps maintain optimal inventory levels
+   - Enables proactive inventory management
+   - Supports automated reorder systems
+
+   Example Warning:
+   "Item 'Stapler' (Stock: ST001) has low quantity (8) but status is 'In Stock'"
+
+
+8. MISSING STOCK NUMBERS
+   ----------------------
+   Purpose: Stock numbers are essential identifiers for inventory items.
+            Items without stock numbers cannot be properly tracked.
+
+   SQL Query:
+   SELECT id, item_name 
+   FROM inventory 
+   WHERE stock_number IS NULL OR stock_number = ''
+
+   Why It Matters:
+   - Stock numbers are primary identifiers
+   - Required for barcode scanning systems
+   - Essential for inventory tracking
+   - Needed for proper item identification
+
+   Example Warning:
+   "Item 'Eraser' (ID: 456) has no stock number assigned"
+
+
+9. ORPHAN RESERVATIONS
+   --------------------
+   Purpose: Reservations must reference valid inventory items. Orphan
+            reservations indicate broken data relationships.
+
+   SQL Query:
+   SELECT r.id, r.item_id, r.quantity, r.status, r.reservation_date
+   FROM reservations r
+   LEFT JOIN inventory i ON r.item_id = i.id
+   WHERE i.id IS NULL
+
+   Note: Only runs if reservations table exists
+
+   Why It Matters:
+   - Reservations must link to existing items
+   - Indicates deleted items with active reservations
+   - Causes booking system errors
+   - Creates data inconsistency
+
+   Example Error:
+   "Reservation #789 references non-existent item_id: 888"
+
+================================================================================
+TECHNICAL IMPLEMENTATION
+================================================================================
+
+LANGUAGE: Python 3.6+
+REASON: Python provides excellent database connectivity, JSON handling, and
+        cross-platform compatibility. It's ideal for data validation tasks.
+
+DATABASE CONNECTOR: pymysql or mysql-connector-python
+REASON: These libraries provide secure, efficient MySQL connectivity with
+        proper error handling and connection pooling.
+
+OUTPUT FORMAT: JSON
+REASON: JSON is easily parseable by PHP, human-readable, and supports
+        structured data representation. It enables seamless integration
+        between Python backend and PHP frontend.
+
+EXECUTION METHOD: Shell command via proc_open()
+REASON: Allows PHP to execute Python script, capture output, handle errors,
+        and implement timeouts. Provides isolation between PHP and Python
+        processes.
+
+TIMEOUT: 30 seconds
+REASON: Prevents hanging processes if script encounters issues. Ensures
+        responsive user experience.
+
+ERROR HANDLING:
+- Database connection failures return JSON error
+- Missing Python dependencies return JSON error
+- SQL query errors are caught and reported
+- Script execution failures are captured and displayed
+
+================================================================================
+RESULT INTERPRETATION
+================================================================================
+
+STATUS: PASS
+-----------
+Meaning: All verification checks passed. No errors or warnings found.
+Action: No action required. Inventory data is in good condition.
+
+STATUS: WARN
+------------
+Meaning: No critical errors found, but warnings exist. Data quality issues
+         detected that should be addressed.
+Action: Review warnings and fix data quality issues when convenient.
+        System is functional but could be improved.
+
+STATUS: FAIL
+------------
+Meaning: One or more critical errors detected. Data integrity issues exist
+         that need immediate attention.
+Action: Review all errors and fix them immediately. Some errors may prevent
+        proper system operation.
+
+STATUS: ERROR
+-------------
+Meaning: System error occurred during verification (not a data error).
+         Could be database connection issue, Python script error, or
+         execution problem.
+Action: Check system configuration, Python installation, database connectivity,
+        and script permissions.
+
+================================================================================
+BEST PRACTICES
+================================================================================
+
+1. RUN REGULARLY
+   - Execute verification daily or weekly
+   - Schedule automated runs if possible
+   - Run before major inventory operations
+
+2. FIX ERRORS IMMEDIATELY
+   - Errors indicate data corruption
+   - Address errors before they multiply
+   - Document fixes for audit trail
+
+3. REVIEW WARNINGS PERIODICALLY
+   - Warnings indicate data quality issues
+   - Fix warnings during maintenance windows
+   - Improve data quality over time
+
+4. DOCUMENT ISSUES
+   - Keep records of verification results
+   - Track error resolution
+   - Monitor trends in data quality
+
+5. USE FOR AUDIT
+   - Include verification results in audit reports
+   - Demonstrate data quality compliance
+   - Support inventory accuracy claims
+
+================================================================================
+INTEGRATION WITH SYSTEM
+================================================================================
+
+FRONTEND: Verification Dashboard (admin/verification_dashboard.php)
+- Provides user interface for running verification
+- Displays results in organized format
+- Shows status, errors, and warnings
+- Enables drill-down into specific issues
+
+BACKEND API: admin/api/run_verification.php
+- Receives verification requests
+- Executes Python script
+- Captures and parses JSON output
+- Returns results to frontend
+
+PYTHON SCRIPT: python/verify_inventory.py
+- Performs all verification checks
+- Connects to database
+- Executes SQL queries
+- Generates JSON output
+
+DATABASE: MySQL (soi_db)
+- Stores inventory data
+- Provides transaction history
+- Maintains referential integrity
+- Supports complex queries
+
+================================================================================
+CONFIGURATION
+================================================================================
+
+Database settings are configured in verify_inventory.py:
+- Host: localhost
+- User: root
+- Password: (empty by default)
+- Database: soi_db
+- Charset: utf8mb4
+
+Low Stock Threshold: 10 units (configurable in check_low_stock_warnings function)
+
+To modify settings, edit the DB_CONFIG dictionary and LOW_STOCK_THRESHOLD
+constant in verify_inventory.py.
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+ISSUE: "MySQL connector not found"
+SOLUTION: Install pymysql or mysql-connector-python using pip
+
+ISSUE: "Database connection failed"
+SOLUTION: Check database credentials, ensure MySQL is running, verify
+          database exists
+
+ISSUE: "Verification script timed out"
+SOLUTION: Increase timeout in run_verification.php, check database performance,
+          optimize slow queries
+
+ISSUE: "Failed to parse verification results"
+SOLUTION: Check Python script output, verify JSON format, check for Python
+          errors in stderr
+
+ISSUE: "Python command not found"
+SOLUTION: Install Python 3.6+, add Python to system PATH, or configure
+          Python path in run_verification.php
+
+================================================================================
+FUTURE ENHANCEMENTS
+================================================================================
+
+Potential improvements to the verification algorithm:
+
+1. CONFIGURABLE THRESHOLDS
+   - Allow admins to set low stock threshold via UI
+   - Customize error severity levels
+   - Configure check sensitivity
+
+2. SCHEDULED VERIFICATION
+   - Automatic daily/weekly runs
+   - Email notifications for failures
+   - Historical trend tracking
+
+3. ADDITIONAL CHECKS
+   - Price validation
+   - Expiration date checks
+   - Supplier validation
+   - Location verification
+
+4. PERFORMANCE OPTIMIZATION
+   - Parallel check execution
+   - Caching of results
+   - Incremental verification
+
+5. REPORTING
+   - Export verification reports
+   - Historical comparison
+   - Trend analysis
+   - Compliance reports
+
+================================================================================
+CONCLUSION
+================================================================================
+
+The Formal Verification Algorithm is a critical component of the Supply Office
+Inventory System, ensuring data integrity, detecting issues early, and
+maintaining the reliability of inventory information. By performing automated
+checks on a regular basis, the system helps prevent data corruption, maintain
+accurate inventory records, and support efficient inventory management
+operations.
+
+Regular use of this verification system is essential for maintaining data
+quality and ensuring the inventory system operates correctly. All errors should
+be addressed promptly, and warnings should be reviewed and resolved during
+regular maintenance cycles.
+
+================================================================================
+Document Version: 1.0
+Last Updated: 2024
+System: Supply Office Inventory
+Institution: University of Antique - Hamtic Campus
+================================================================================
+

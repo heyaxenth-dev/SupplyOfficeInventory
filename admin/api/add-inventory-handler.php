@@ -1,16 +1,11 @@
 <?php
-
 header('Content-Type: application/json');
+
+// Include authentication first (it will check and exit if not authenticated)
+require_once '../authentication.php';
 
 // Include database connection
 require_once '../config/conn.php';
-require_once '../authentication.php';
-
-// Check if user is authenticated
-if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] !== true) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit;
-}
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
