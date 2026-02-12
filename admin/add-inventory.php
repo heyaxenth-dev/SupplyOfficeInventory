@@ -207,24 +207,11 @@ $(document).ready(function() {
             });
         };
 
-        // Get status badge class
-        var statusClass = '';
-        var statusIcon = '';
-        switch (status) {
-            case 'In Stock':
-                statusClass = 'badge bg-success';
-                statusIcon = '<i class="bi bi-check-circle"></i>';
-                break;
-            case 'Low Stock':
-                statusClass = 'badge bg-warning';
-                statusIcon = '<i class="bi bi-exclamation-triangle"></i>';
-                break;
-            case 'Out of Stock':
-                statusClass = 'badge bg-danger';
-                statusIcon = '<i class="bi bi-x-circle"></i>';
-                break;
-            default:
-                statusClass = 'badge bg-secondary';
+        // Get status display - blank when low or out of stock
+        var lowStockThreshold = 10;
+        var statusHtml = '';
+        if (quantity > lowStockThreshold) {
+            statusHtml = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> In Stock</span>';
         }
 
         // Number formatting function
@@ -242,8 +229,7 @@ $(document).ready(function() {
         $('#view_unit_of_measure').text(unitOfMeasure || 'N/A');
         $('#view_unit_value').text(unitValue ? '₱' + parseFloat(unitValue).toFixed(2) : 'N/A');
         $('#view_quantity').text(number_format(quantity));
-        $('#view_status').html('<span class="' + statusClass + '">' + statusIcon + ' ' + status +
-            '</span>');
+        $('#view_status').html(statusHtml);
         $('#view_last_restocked').text(formatDate(lastRestocked));
         $('#view_created_at').text(formatDateTime(createdAt));
         $('#view_updated_at').text(formatDateTime(updatedAt));

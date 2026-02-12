@@ -49,20 +49,14 @@ include 'includes/sidebar.php';
                                 $result = $conn->query($sql);
                                 
                                 if ($result && $result->num_rows > 0) {
+                                    $lowStockThreshold = 10;
                                     while ($row = $result->fetch_assoc()) {
-                                        $statusClass = '';
-                                        switch($row['status']) {
-                                            case 'In Stock':
-                                                $statusClass = 'badge bg-success';
-                                                break;
-                                            case 'Low Stock':
-                                                $statusClass = 'badge bg-warning';
-                                                break;
-                                            case 'Out of Stock':
-                                                $statusClass = 'badge bg-danger';
-                                                break;
-                                            default:
-                                                $statusClass = 'badge bg-secondary';
+                                        $quantity = intval($row['quantity']);
+                                        $showStatus = ($quantity > $lowStockThreshold);
+                                        $statusDisplay = '';
+                                        if ($showStatus) {
+                                            $statusClass = 'badge bg-success';
+                                            $statusDisplay = '<span class="' . $statusClass . '">In Stock</span>';
                                         }
                                         
                                         $lastRestocked = $row['last_restocked'] ? date('M d, Y', strtotime($row['last_restocked'])) : 'N/A';
@@ -74,9 +68,7 @@ include 'includes/sidebar.php';
                                     <td><?php echo htmlspecialchars($row['category']); ?></td>
                                     <td><?php echo htmlspecialchars($row['unit_of_measure'] ?? 'N/A'); ?></td>
                                     <td><?php echo number_format($row['quantity']); ?></td>
-                                    <td><span
-                                            class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($row['status']); ?></span>
-                                    </td>
+                                    <td><?php echo $statusDisplay; ?></td>
                                     <td><?php echo $lastRestocked; ?></td>
                                     <td>
                                         <button class="btn btn-sm btn-info border-0 view-item"

@@ -5,40 +5,67 @@ include 'includes/login-credentials.php';
 include 'includes/header.php';
 include 'includes/sidebar.php';
 
-// Get filter parameters
-$reportMonth = isset($_GET['reportMonth']) ? $_GET['reportMonth'] : date('Y-m');
+// Get filter parameters - support date range (reportMonthFrom, reportMonthTo) or single month (reportMonth)
+$reportMonthFrom = isset($_GET['reportMonthFrom']) ? $_GET['reportMonthFrom'] : null;
+$reportMonthTo = isset($_GET['reportMonthTo']) ? $_GET['reportMonthTo'] : null;
 
-// Validate and parse month
-if (!preg_match('/^\d{4}-\d{2}$/', $reportMonth)) {
-    $reportMonth = date('Y-m');
+// Fallback to single month for backward compatibility
+if (!$reportMonthFrom && isset($_GET['reportMonth'])) {
+    $reportMonthFrom = $_GET['reportMonth'];
+}
+if (!$reportMonthTo && isset($_GET['reportMonth'])) {
+    $reportMonthTo = $_GET['reportMonth'];
 }
 
-// Parse month and year
-$year = substr($reportMonth, 0, 4);
-$month = substr($reportMonth, 5, 2);
-$monthName = date('F', mktime(0, 0, 0, $month, 1, $year));
+// Default to current month if not provided
+$today = date('Y-m');
+if (!$reportMonthFrom) $reportMonthFrom = $today;
+if (!$reportMonthTo) $reportMonthTo = $today;
 
-// Build SQL query to filter by month (based on created_at or updated_at)
-$startDate = $year . '-' . $month . '-01';
-$endDate = date('Y-m-t', strtotime($startDate)); // Last day of the month
-$reportDate = date('F d, Y', strtotime($endDate)); // Format: "January 31, 2025"
+// Validate format (YYYY-MM)
+if (!preg_match('/^\d{4}-\d{2}$/', $reportMonthFrom)) $reportMonthFrom = $today;
+if (!preg_match('/^\d{4}-\d{2}$/', $reportMonthTo)) $reportMonthTo = $today;
 
-// Fetch all inventory items (as of the report date)
-// The report shows current inventory status as of the selected month
-$sql = "SELECT * FROM inventory 
-        ORDER BY item_name ASC";
-$result = $conn->query($sql);
+// Ensure To is not before From
+if ($reportMonthTo < $reportMonthFrom) {
+    $reportMonthTo = $reportMonthFrom;
+}
+
+// Build display strings for the date range
+$fromYear = substr($reportMonthFrom, 0, 4);
+$fromMonth = substr($reportMonthFrom, 5, 2);
+$toYear = substr($reportMonthTo, 0, 4);
+$toMonth = substr($reportMonthTo, 5, 2);
+
+$fromMonthName = date('F', mktime(0, 0, 0, $fromMonth, 1, $fromYear));
+$toMonthName = date('F', mktime(0, 0, 0, $toMonth, 1, $toYear));
+
+$reportPeriodDisplay = ($reportMonthFrom === $reportMonthTo)
+    ? ($fromMonthName . ' ' . $fromYear)
+    : ($fromMonthName . ' ' . $fromYear . ' to ' . $toMonthName . ' ' . $toYear);
+
+$startDate = $reportMonthFrom . '-01';
+$endDate = date('Y-m-t', strtotime($reportMonthTo . '-01'));
+$reportDate = date('F d, Y', strtotime($endDate));
+
+// Fetch inventory items created within the date range
+$stmt = $conn->prepare("SELECT * FROM inventory 
+        WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?
+        ORDER BY item_name ASC");
+$stmt->bind_param("ss", $startDate, $endDate);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Report for <?php echo $monthName . ' ' . $year; ?></h1>
+        <h1>Report for <?php echo htmlspecialchars($reportPeriodDisplay); ?></h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
                 <li class="breadcrumb-item"><a href="reports.php">Reports</a></li>
-                <li class="breadcrumb-item active">Report for <?php echo $monthName . ' ' . $year; ?></li>
+                <li class="breadcrumb-item active">Report for <?php echo htmlspecialchars($reportPeriodDisplay); ?></li>
             </ol>
         </nav>
     </div><!-- End Page Title -->
@@ -90,7 +117,7 @@ $result = $conn->query($sql);
 
                         <div class="mb-3 no-print">
                             <p class="text-muted">Showing results for: <strong
-                                    class="text-primary"><?php echo $monthName . ' ' . $year; ?></strong></p>
+                                    class="text-primary"><?php echo htmlspecialchars($reportPeriodDisplay); ?></strong></p>
                         </div>
 
                         <!-- Table with inventory data - Official Format -->
@@ -168,7 +195,7 @@ $result = $conn->query($sql);
                                     ?>
                                     <tr>
                                         <td colspan="11" class="text-center py-4">
-                                            No records found for <?php echo $monthName . ' ' . $year; ?>
+                                            No records found for <?php echo htmlspecialchars($reportPeriodDisplay); ?>
                                         </td>
                                     </tr>
                                     <?php
@@ -216,7 +243,7 @@ $result = $conn->query($sql);
                                 <div class="card bg-success text-white">
                                     <div class="card-body text-center">
                                         <h6 class="card-title">Report Period</h6>
-                                        <h5><?php echo $monthName . ' ' . $year; ?></h5>
+                                        <h5><?php echo htmlspecialchars($reportPeriodDisplay); ?></h5>
                                     </div>
                                 </div>
                             </div>
