@@ -6,6 +6,7 @@ require_once '../authentication.php';
 
 // Include database connection
 require_once '../config/conn.php';
+require_once __DIR__ . '/../../config/audit_logger.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -29,7 +30,7 @@ if ($id <= 0) {
 }
 
 // Check if item exists
-$checkSql = "SELECT id, item_name FROM inventory WHERE id = ?";
+$checkSql = "SELECT id, item_name, stock_number FROM inventory WHERE id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param("i", $id);
 $checkStmt->execute();
@@ -56,6 +57,7 @@ $stmt->bind_param("i", $id);
 
 // Execute statement
 if ($stmt->execute()) {
+    logInventoryChange($conn, 'DELETE', $id, $item['item_name'], $item['stock_number'] ?? null, 'Item deleted.');
     echo json_encode([
         'success' => true, 
         'message' => 'Inventory item "' . htmlspecialchars($item['item_name']) . '" has been deleted successfully!'

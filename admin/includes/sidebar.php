@@ -51,6 +51,12 @@
             </a>
         </li>
 
+        <li class="nav-item">
+            <a <?= setActive('change_log') ?> href="change_log.php">
+                <i class="bi bi-journal-text"></i>
+                <span>Change Log</span>
+            </a>
+        </li>
 
         <li class="nav-item">
             <a <?= setActive('user-manangement') ?> href="user-manangement.php">

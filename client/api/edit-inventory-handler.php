@@ -6,6 +6,7 @@ require_once '../authentication.php';
 
 // Include database connection
 require_once '../config/conn.php';
+require_once __DIR__ . '/../../config/audit_logger.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -28,8 +29,9 @@ $category = isset($_POST['category']) ? trim($_POST['category']) : '';
 $unit_of_measure = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : null;
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
-$status = isset($_POST['status']) ? trim($_POST['status']) : 'In Stock';
-$last_restocked = isset($_POST['last_restocked']) && $_POST['last_restocked'] !== '' ? $_POST['last_restocked'] : null;
+
+// Auto-calculate status from quantity
+$status = ($quantity === 0) ? 'Out of Stock' : (($quantity <= 10) ? 'Low Stock' : 'In Stock');
 
 // Validate required fields
 if ($id <= 0) {
@@ -52,28 +54,29 @@ if ($quantity < 0) {
     exit;
 }
 
-// Validate status
-$valid_statuses = ['In Stock', 'Low Stock', 'Out of Stock'];
-if (!in_array($status, $valid_statuses)) {
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
-    exit;
-}
-
-// Check if item exists
-$checkSql = "SELECT id FROM inventory WHERE id = ?";
+// Check if item exists and get old values for audit
+$checkSql = "SELECT id, item_name, stock_number, quantity, status FROM inventory WHERE id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param("i", $id);
 $checkStmt->execute();
 $result = $checkStmt->get_result();
+$oldItem = $result->fetch_assoc();
 $checkStmt->close();
 
-if ($result->num_rows == 0) {
+if (!$oldItem) {
     echo json_encode(['success' => false, 'message' => 'Inventory item not found']);
     exit;
 }
 
-// Prepare SQL statement
-$sql = "UPDATE inventory SET item_name = ?, description = ?, category = ?, unit_of_measure = ?, unit_value = ?, quantity = ?, status = ?, last_restocked = ? WHERE id = ?";
+// Build changes summary for audit
+$changes = [];
+if ($oldItem['item_name'] != $item_name) $changes[] = "Item: {$oldItem['item_name']} → {$item_name}";
+if ($oldItem['quantity'] != $quantity) $changes[] = "Qty: {$oldItem['quantity']} → {$quantity}";
+if ($oldItem['status'] != $status) $changes[] = "Status: {$oldItem['status']} → {$status}";
+$changesSummary = !empty($changes) ? implode('; ', $changes) : 'Record updated';
+
+// Prepare SQL statement - last_restocked = CURDATE() matches updated_at (same DB timestamp)
+$sql = "UPDATE inventory SET item_name = ?, description = ?, category = ?, unit_of_measure = ?, unit_value = ?, quantity = ?, status = ?, last_restocked = CURDATE() WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
 
@@ -83,7 +86,7 @@ if (!$stmt) {
 }
 
 // Bind parameters - s=string, i=integer, d=double/decimal
-$stmt->bind_param("sssssdiss", 
+$stmt->bind_param("sssssdis", 
     $item_name, 
     $description, 
     $category, 
@@ -91,12 +94,12 @@ $stmt->bind_param("sssssdiss",
     $unit_value, 
     $quantity, 
     $status, 
-    $last_restocked,
     $id
 );
 
 // Execute statement
 if ($stmt->execute()) {
+    logInventoryChange($conn, 'EDIT', $id, $item_name, $stock_number, $changesSummary);
     echo json_encode([
         'success' => true, 
         'message' => 'Inventory item updated successfully!'

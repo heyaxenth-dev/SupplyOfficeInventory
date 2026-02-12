@@ -6,6 +6,7 @@ require_once '../authentication.php';
 
 // Include database connection
 require_once '../config/conn.php';
+require_once __DIR__ . '/../../config/audit_logger.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -33,8 +34,10 @@ $category = isset($_POST['category']) ? trim($_POST['category']) : '';
 $unit_of_measure = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : null;
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
-$status = isset($_POST['status']) ? trim($_POST['status']) : 'In Stock';
-$last_restocked = isset($_POST['last_restocked']) && $_POST['last_restocked'] !== '' ? $_POST['last_restocked'] : null;
+
+// last_restocked matches created_at (set in SQL via CURDATE())
+// Auto-calculate status from quantity
+$status = ($quantity === 0) ? 'Out of Stock' : (($quantity <= 10) ? 'Low Stock' : 'In Stock');
 
 // Auto-generate stock number based on item name
 // Format: First 2 letters (uppercase) + 4 random digits
@@ -101,16 +104,9 @@ if ($quantity < 0) {
     exit;
 }
 
-// Validate status
-$valid_statuses = ['In Stock', 'Low Stock', 'Out of Stock'];
-if (!in_array($status, $valid_statuses)) {
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
-    exit;
-}
-
-// Prepare SQL statement
+// Prepare SQL statement - last_restocked = CURDATE() to match created_at
 $sql = "INSERT INTO inventory (item_name, description, stock_number, category, unit_of_measure, unit_value, quantity, status, last_restocked) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())";
 
 $stmt = $conn->prepare($sql);
 
@@ -119,8 +115,8 @@ if (!$stmt) {
     exit;
 }
 
-// Bind parameters - s=string, i=integer, d=double/decimal
-$stmt->bind_param("sssssdiss", 
+// Bind parameters - s=string, i=integer, d=double/decimal (8 params, last_restocked uses CURDATE())
+$stmt->bind_param("sssssdis", 
     $item_name, 
     $description, 
     $stock_number, 
@@ -128,16 +124,17 @@ $stmt->bind_param("sssssdiss",
     $unit_of_measure, 
     $unit_value, 
     $quantity, 
-    $status, 
-    $last_restocked
+    $status
 );
 
 // Execute statement
 if ($stmt->execute()) {
+    $newId = $stmt->insert_id;
+    logInventoryChange($conn, 'ADD', $newId, $item_name, $stock_number, "Added: Qty {$quantity}, Category: {$category}");
     echo json_encode([
         'success' => true, 
         'message' => 'Inventory item added successfully! Stock Number: ' . $stock_number,
-        'id' => $stmt->insert_id,
+        'id' => $newId,
         'stock_number' => $stock_number
     ]);
 } else {

@@ -47,13 +47,30 @@ pre {
     border-width: 0.15em;
 }
 
-/* Status icons */
-.bi-check-circle {
+/* Loading spin animation */
+.bi-arrow-repeat.spin {
+    animation: verification-spin 1s linear infinite;
+}
+
+@keyframes verification-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Status icons - success, warning, error */
+.bi-check-circle,
+.bi-check-circle-fill {
     color: #28a745;
 }
 
-.bi-exclamation-triangle {
+.bi-exclamation-triangle,
+.bi-exclamation-triangle-fill {
     color: #ffc107;
+}
+
+.bi-exclamation-octagon,
+.bi-exclamation-octagon-fill {
+    color: #dc3545;
 }
 
 .bi-x-circle {
@@ -62,6 +79,67 @@ pre {
 
 .bi-info-circle {
     color: #17a2b8;
+}
+
+/* Feedback colors - STATUS_INCONSISTENCY (orange/amber - data mismatch) */
+.verification-item-status-inconsistency .badge {
+    background-color: #fd7e14 !important;
+    color: #fff !important;
+}
+
+.verification-item-status-inconsistency .bi-exclamation-triangle-fill {
+    color: #fd7e14 !important;
+}
+
+.verification-item-status-inconsistency {
+    border-left: 4px solid #fd7e14;
+}
+
+/* Feedback colors - LOW_STOCK_WARNING (yellow/amber - informational) */
+.verification-item-low-stock .badge {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.verification-item-low-stock .bi-exclamation-triangle-fill {
+    color: #856404 !important;
+}
+
+.verification-item-low-stock {
+    border-left: 4px solid #ffc107;
+}
+
+/* Other warning types - default */
+.verification-item-other .badge {
+    background-color: #0dcaf0 !important;
+    color: #000 !important;
+}
+
+/* Error items (red) */
+.verification-item-error {
+    border-left: 4px solid #dc3545;
+}
+
+/* Verification list items */
+.verification-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+    border: 1px solid #dee2e6;
+}
+
+.verification-list-item .item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.verification-list-item .item-actions {
+    flex-shrink: 0;
+    margin-left: 1rem;
 }
 
 /* Summary card text colors */

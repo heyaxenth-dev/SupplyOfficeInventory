@@ -23,7 +23,7 @@ $(document).ready(function () {
 
 		// Clear previous results
 		statusDiv.html(
-			'<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Running verification...</div>'
+			'<div class="alert alert-info"><i class="bi bi-arrow-repeat spin"></i> Running verification...</div>'
 		);
 		errorList.html('');
 		warningList.html('');
@@ -88,7 +88,7 @@ $(document).ready(function () {
 
 				statusDiv.html(`
                     <div class="alert alert-danger">
-                        <i class="bi bi-x-circle"></i> <strong>Verification failed:</strong> ${errorMessage}
+                        <i class="bi bi-exclamation-octagon-fill"></i> <strong>Verification failed:</strong> ${errorMessage}
                         ${
 													debugInfo
 														? '<div class="mt-3">' + debugInfo + '</div>'
@@ -117,7 +117,7 @@ $(document).ready(function () {
 
 			statusDiv.html(`
                 <div class="alert alert-danger">
-                    <i class="bi bi-x-circle"></i> <strong>ERROR - Verification failed:</strong> ${
+                    <i class="bi bi-exclamation-octagon-fill"></i> <strong>ERROR - Verification failed:</strong> ${
 											data.message || 'Unknown error'
 										}
                     ${debugHtml}
@@ -133,19 +133,19 @@ $(document).ready(function () {
 
 		if (data.status === 'PASS') {
 			statusClass = 'success';
-			statusIcon = 'check-circle';
+			statusIcon = 'check-circle-fill';
 			statusText = 'PASS - All checks passed';
 		} else if (data.status === 'WARN') {
 			statusClass = 'warning';
-			statusIcon = 'exclamation-triangle';
+			statusIcon = 'exclamation-triangle-fill';
 			statusText = 'WARN - Warnings found';
 		} else if (data.status === 'FAIL') {
 			statusClass = 'danger';
-			statusIcon = 'x-circle';
+			statusIcon = 'exclamation-octagon-fill';
 			statusText = 'FAIL - Errors found';
 		} else if (data.status === 'ERROR') {
 			statusClass = 'danger';
-			statusIcon = 'x-circle';
+			statusIcon = 'exclamation-octagon-fill';
 			statusText =
 				'ERROR - Verification failed: ' + (data.message || 'Unknown error');
 		}
@@ -170,29 +170,18 @@ $(document).ready(function () {
 
 		// Display errors
 		if (data.errors && data.errors.length > 0) {
-			let errorHtml = '<div class="accordion" id="errorAccordion">';
+			let errorHtml = '<div class="verification-list">';
 			data.errors.forEach((error, index) => {
-				const errorId = `error-${index}`;
+				const hasItemId = error.item_id != null && error.item_id > 0;
 				errorHtml += `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-${errorId}">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#collapse-${errorId}" aria-expanded="false" aria-controls="collapse-${errorId}">
-                                <span class="badge bg-danger me-2">${
-																	error.type || 'ERROR'
-																}</span>
-                                ${error.message || 'Unknown error'}
-                            </button>
-                        </h2>
-                        <div id="collapse-${errorId}" class="accordion-collapse collapse" 
-                             aria-labelledby="heading-${errorId}" data-bs-parent="#errorAccordion">
-                            <div class="accordion-body">
-                                <pre class="bg-light p-3 rounded">${JSON.stringify(
-																	error,
-																	null,
-																	2
-																)}</pre>
-                            </div>
+                    <div class="verification-list-item verification-item-error">
+                        <div class="item-content">
+                            <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>
+                            <span class="badge bg-danger me-2">${error.type || 'ERROR'}</span>
+                            <span>${error.message || 'Unknown error'}</span>
+                        </div>
+                        <div class="item-actions">
+                            ${hasItemId ? `<button type="button" class="btn btn-sm btn-outline-primary edit-from-verification" data-item-id="${error.item_id}" title="Edit item"><i class="bi bi-pencil-square"></i> Edit</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -202,36 +191,27 @@ $(document).ready(function () {
 		} else {
 			errorList.html(`
                 <div class="alert alert-success">
-                    <i class="bi bi-check-circle"></i> No errors found!
+                    <i class="bi bi-check-circle-fill"></i> No errors found!
                 </div>
             `);
 		}
 
 		// Display warnings
 		if (data.warnings && data.warnings.length > 0) {
-			let warningHtml = '<div class="accordion" id="warningAccordion">';
+			let warningHtml = '<div class="verification-list">';
 			data.warnings.forEach((warning, index) => {
-				const warningId = `warning-${index}`;
+				const hasItemId = warning.item_id != null && warning.item_id > 0;
+				const itemClass = warning.type === 'STATUS_INCONSISTENCY' ? 'verification-item-status-inconsistency' :
+					warning.type === 'LOW_STOCK_WARNING' ? 'verification-item-low-stock' : 'verification-item-other';
 				warningHtml += `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-${warningId}">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#collapse-${warningId}" aria-expanded="false" aria-controls="collapse-${warningId}">
-                                <span class="badge bg-warning text-dark me-2">${
-																	warning.type || 'WARNING'
-																}</span>
-                                ${warning.message || 'Unknown warning'}
-                            </button>
-                        </h2>
-                        <div id="collapse-${warningId}" class="accordion-collapse collapse" 
-                             aria-labelledby="heading-${warningId}" data-bs-parent="#warningAccordion">
-                            <div class="accordion-body">
-                                <pre class="bg-light p-3 rounded">${JSON.stringify(
-																	warning,
-																	null,
-																	2
-																)}</pre>
-                            </div>
+                    <div class="verification-list-item ${itemClass}">
+                        <div class="item-content">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span class="badge me-2">${warning.type || 'WARNING'}</span>
+                            <span>${warning.message || 'Unknown warning'}</span>
+                        </div>
+                        <div class="item-actions">
+                            ${hasItemId ? `<button type="button" class="btn btn-sm btn-outline-primary edit-from-verification" data-item-id="${warning.item_id}" title="Edit item"><i class="bi bi-pencil-square"></i> Edit</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -241,7 +221,7 @@ $(document).ready(function () {
 		} else {
 			warningList.html(`
                 <div class="alert alert-success">
-                    <i class="bi bi-check-circle"></i> No warnings found!
+                    <i class="bi bi-check-circle-fill"></i> No warnings found!
                 </div>
             `);
 		}
@@ -272,4 +252,82 @@ $(document).ready(function () {
 			});
 		}
 	}
+
+	// Edit from verification - delegated handler for dynamically added buttons
+	$(document).on('click', '.edit-from-verification', function () {
+		const itemId = $(this).data('item-id');
+		if (!itemId) return;
+
+		$.ajax({
+			url: 'api/get-inventory-item.php',
+			type: 'GET',
+			data: { id: itemId },
+			dataType: 'json',
+			success: function (res) {
+				if (res.success && res.item) {
+					const item = res.item;
+					$('#ve_item_id').val(item.id);
+					$('#ve_item_name').val(item.item_name);
+					$('#ve_description').val(item.description || '');
+					$('#ve_stock_number').val(item.stock_number || '');
+					$('#ve_category').val(item.category || '');
+					$('#ve_unit_of_measure').val(item.unit_of_measure || '');
+					$('#ve_unit_value').val(item.unit_value || '');
+					$('#ve_quantity').val(item.quantity);
+					var qty = parseInt(item.quantity) || 0;
+					var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
+					$('#ve_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
+					$('#ve_last_restocked').val(item.last_restocked ? item.last_restocked.split(' ')[0] : '');
+					new bootstrap.Modal(document.getElementById('verificationEditModal')).show();
+				} else {
+					Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Failed to load item' });
+				}
+			},
+			error: function () {
+				Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load item data' });
+			}
+		});
+	});
+
+	// Update status preview when quantity changes in verification edit form
+	$(document).on('input', '#ve_quantity', function () {
+		const qty = parseInt($(this).val()) || 0;
+		const statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
+		$('#ve_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
+	});
+
+	// Verification edit form submit
+	$('#verificationEditForm').on('submit', function (e) {
+		e.preventDefault();
+		const form = $(this);
+		const submitBtn = form.find('button[type="submit"]');
+		const originalText = submitBtn.html();
+		submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Updating...');
+
+		$.ajax({
+			url: 'api/edit-inventory-handler.php',
+			type: 'POST',
+			data: form.serialize(),
+			dataType: 'json',
+			success: function (res) {
+				if (res.success) {
+					Swal.fire({ icon: 'success', title: 'Updated!', text: res.message, timer: 2000, showConfirmButton: false });
+					bootstrap.Modal.getInstance(document.getElementById('verificationEditModal')).hide();
+					runVerification(); // Re-run to refresh results
+				} else {
+					Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Update failed' });
+					submitBtn.prop('disabled', false).html(originalText);
+				}
+			},
+			error: function (xhr) {
+				let msg = 'An error occurred while updating.';
+				try {
+					const r = JSON.parse(xhr.responseText);
+					if (r.message) msg = r.message;
+				} catch (e) {}
+				Swal.fire({ icon: 'error', title: 'Error', text: msg });
+				submitBtn.prop('disabled', false).html(originalText);
+			}
+		});
+	});
 });

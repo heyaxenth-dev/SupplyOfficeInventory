@@ -129,6 +129,87 @@ include 'includes/sidebar.php';
 
 </main><!-- End #main -->
 
+<!-- Edit Inventory Modal (for quick fix from verification results) -->
+<div class="modal fade" id="verificationEditModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Inventory Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="verificationEditForm">
+                <input type="hidden" id="ve_item_id" name="id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ve_item_name" class="form-label">Item Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ve_item_name" name="item_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ve_stock_number" class="form-label">Stock Number</label>
+                            <input type="text" class="form-control" id="ve_stock_number" readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="ve_description" class="form-label">Description</label>
+                            <textarea class="form-control" id="ve_description" name="description" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="ve_category" class="form-label">Category <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ve_category" name="category" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="ve_unit_of_measure" class="form-label">Unit of Measure</label>
+                            <select class="form-select" id="ve_unit_of_measure" name="unit_of_measure">
+                                <option value="">Select Unit</option>
+                                <option value="pc">pc</option>
+                                <option value="pc.">pc.</option>
+                                <option value="set">set</option>
+                                <option value="roll">roll</option>
+                                <option value="bot">bot</option>
+                                <option value="gallon">gallon</option>
+                                <option value="can">can</option>
+                                <option value="cake">cake</option>
+                                <option value="box">box</option>
+                                <option value="pack">pack</option>
+                                <option value="bottle">bottle</option>
+                                <option value="piece">piece</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="ve_unit_value" class="form-label">Unit Value (₱)</label>
+                            <input type="number" class="form-control" id="ve_unit_value" name="unit_value" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="ve_quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="ve_quantity" name="quantity" required min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <div id="ve_status_preview" class="form-control bg-light" style="padding: 0.5rem 0.75rem;">
+                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on quantity)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="ve_last_restocked" class="form-label">Last Restocked</label>
+                            <input type="date" class="form-control" id="ve_last_restocked" name="last_restocked">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Update Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <?php 
 include 'includes/footer.php';
 ?>

@@ -52,14 +52,16 @@ include 'includes/sidebar.php';
                                     $lowStockThreshold = 10;
                                     while ($row = $result->fetch_assoc()) {
                                         $quantity = intval($row['quantity']);
-                                        $showStatus = ($quantity > $lowStockThreshold);
                                         $statusDisplay = '';
-                                        if ($showStatus) {
-                                            $statusClass = 'badge bg-success';
-                                            $statusDisplay = '<span class="' . $statusClass . '">In Stock</span>';
+                                        if ($quantity === 0) {
+                                            $statusDisplay = '<span class="badge bg-danger">Out of Stock</span>';
+                                        } elseif ($quantity <= $lowStockThreshold) {
+                                            $statusDisplay = '<span class="badge bg-warning text-dark">Low Stock</span>';
+                                        } else {
+                                            $statusDisplay = '<span class="badge bg-success">In Stock</span>';
                                         }
                                         
-                                        $lastRestocked = $row['last_restocked'] ? date('M d, Y', strtotime($row['last_restocked'])) : 'N/A';
+                                        $lastRestocked = $row['updated_at'] ? date('M d, Y', strtotime($row['updated_at'])) : 'N/A';
                                 ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($row['item_name']); ?></td>

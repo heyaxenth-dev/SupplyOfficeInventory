@@ -59,12 +59,10 @@
                             <input type="number" class="form-control" id="quantity" name="quantity" required min="0">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="In Stock">In Stock</option>
-                                <option value="Low Stock">Low Stock</option>
-                                <option value="Out of Stock">Out of Stock</option>
-                            </select>
+                            <label class="form-label">Status</label>
+                            <div class="form-control bg-light" style="padding: 0.5rem 0.75rem;">
+                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on quantity)</small>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="last_restocked" class="form-label">Last Restocked</label>
@@ -207,10 +205,14 @@ $(document).ready(function() {
             });
         };
 
-        // Get status display - blank when low or out of stock
+        // Get status display - matches quantity
         var lowStockThreshold = 10;
         var statusHtml = '';
-        if (quantity > lowStockThreshold) {
+        if (quantity === 0) {
+            statusHtml = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Out of Stock</span>';
+        } else if (quantity <= lowStockThreshold) {
+            statusHtml = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Low Stock</span>';
+        } else {
             statusHtml = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> In Stock</span>';
         }
 
@@ -230,7 +232,8 @@ $(document).ready(function() {
         $('#view_unit_value').text(unitValue ? '₱' + parseFloat(unitValue).toFixed(2) : 'N/A');
         $('#view_quantity').text(number_format(quantity));
         $('#view_status').html(statusHtml);
-        $('#view_last_restocked').text(formatDate(lastRestocked));
+        // Last Restocked matches Last Updated (same update timestamp)
+        $('#view_last_restocked').text(formatDateTime(updatedAt));
         $('#view_created_at').text(formatDateTime(createdAt));
         $('#view_updated_at').text(formatDateTime(updatedAt));
 
@@ -268,11 +271,21 @@ $(document).ready(function() {
         $('#edit_unit_of_measure').val(unitOfMeasure);
         $('#edit_unit_value').val(unitValue);
         $('#edit_quantity').val(quantity);
-        $('#edit_status').val(status);
+        // Status is auto-calculated from quantity - update preview
+        var qty = parseInt(quantity) || 0;
+        var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
+        $('#edit_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
         $('#edit_last_restocked').val(lastRestocked);
 
         // Show edit modal
         $('#editInventoryModal').modal('show');
+    });
+
+    // Update status preview when quantity changes in edit form
+    $('#edit_quantity').on('input', function() {
+        var qty = parseInt($(this).val()) || 0;
+        var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
+        $('#edit_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
     });
 
     // Handle edit form submission
@@ -484,13 +497,10 @@ $(document).ready(function() {
                                 min="0">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="edit_status" class="form-label">Status <span
-                                    class="text-danger">*</span></label>
-                            <select class="form-select" id="edit_status" name="status" required>
-                                <option value="In Stock">In Stock</option>
-                                <option value="Low Stock">Low Stock</option>
-                                <option value="Out of Stock">Out of Stock</option>
-                            </select>
+                            <label class="form-label">Status</label>
+                            <div id="edit_status_preview" class="form-control bg-light" style="padding: 0.5rem 0.75rem;">
+                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on quantity)</small>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="edit_last_restocked" class="form-label">Last Restocked</label>
