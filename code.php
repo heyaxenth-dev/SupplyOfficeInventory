@@ -9,7 +9,7 @@ if (isset($_POST['registerBtn']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $conn->real_escape_string($_POST['name']);
     $email = $conn->real_escape_string($_POST['email']);
     $role = $conn->real_escape_string($_POST['role']);
-    $department = $conn->real_escape_string($_POST['department']);
+    // $department = $conn->real_escape_string($_POST['department']);
     $password = $conn->real_escape_string($_POST['password']);
     $confirm_password = $conn->real_escape_string($_POST['confirm_password']);
     

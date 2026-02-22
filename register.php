@@ -92,7 +92,7 @@ include 'alert.php';
                                 </div>
 
                                 <!-- New Department Field -->
-                                <div class="col-12">
+                                <!-- <div class="col-12">
                                     <div class="form-floating">
                                         <input type="text" name="department" class="form-control" id="yourDepartment"
                                             placeholder="Department" required>
@@ -100,7 +100,7 @@ include 'alert.php';
                                         <div class="invalid-feedback">Please enter your department!</div>
                                     </div>
 
-                                </div>
+                                </div> -->
 
                                 <div class="col-12">
                                     <div class="form-floating">

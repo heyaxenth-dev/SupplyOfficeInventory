@@ -33,7 +33,7 @@ include 'includes/sidebar.php';
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    <th>Department</th>
+                                    <!-- <th>Department</th> -->
                                     <th>Date Created</th>
                                     <th>Actions</th>
                                 </tr>
@@ -78,7 +78,7 @@ include 'includes/sidebar.php';
                                     <td><span
                                             class="<?php echo $roleClass; ?>"><?php echo htmlspecialchars($row['role']); ?></span>
                                     </td>
-                                    <td><?php echo htmlspecialchars($row['department'] ?? 'N/A'); ?></td>
+                                    <!-- <td><?php echo htmlspecialchars($row['department'] ?? 'N/A'); ?></td>x  -->
                                     <td><?php echo $dateCreated; ?></td>
                                     <td>
                                         <button class="btn btn-sm btn-info border-0 view-user"
