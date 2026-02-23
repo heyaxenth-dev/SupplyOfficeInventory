@@ -46,9 +46,11 @@ include 'includes/sidebar.php';
                                 $hasCreatedAt = $columnsCheck->num_rows > 0;
                                 
                                 if ($hasCreatedAt) {
-                                    $sql = "SELECT id, name, email, role, department, created_at FROM users ORDER BY created_at DESC";
+                                    // $sql = "SELECT id, name, email, role, department, created_at FROM users ORDER BY created_at DESC";
+                                    $sql = "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC";
                                 } else {
-                                    $sql = "SELECT id, name, email, role, department FROM users ORDER BY id DESC";
+                                    // $sql = "SELECT id, name, email, role, department FROM users ORDER BY id DESC";
+                                    $sql = "SELECT id, name, email, role FROM users ORDER BY id DESC";
                                 }
                                 $result = $conn->query($sql);
                                 
@@ -86,7 +88,6 @@ include 'includes/sidebar.php';
                                             data-name="<?php echo htmlspecialchars($row['name']); ?>"
                                             data-email="<?php echo htmlspecialchars($row['email']); ?>"
                                             data-role="<?php echo htmlspecialchars($row['role']); ?>"
-                                            data-department="<?php echo htmlspecialchars($row['department'] ?? ''); ?>"
                                             data-created-at="<?php echo isset($row['created_at']) ? $row['created_at'] : ''; ?>"
                                             title="View Details">
                                             <i class="bi bi-eye"></i>
@@ -95,9 +96,7 @@ include 'includes/sidebar.php';
                                             data-id="<?php echo $row['id']; ?>"
                                             data-name="<?php echo htmlspecialchars($row['name']); ?>"
                                             data-email="<?php echo htmlspecialchars($row['email']); ?>"
-                                            data-role="<?php echo htmlspecialchars($row['role']); ?>"
-                                            data-department="<?php echo htmlspecialchars($row['department'] ?? ''); ?>"
-                                            title="Edit">
+                                            data-role="<?php echo htmlspecialchars($row['role']); ?>" title="Edit">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <button class="btn btn-sm btn-danger border-0 delete-user"

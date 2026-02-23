@@ -51,13 +51,13 @@
             </a>
         </li>
 
-
+        <!-- 
         <li class="nav-item">
             <a <?= setActive('user-manangement') ?> href="user-manangement.php">
                 <i class="bi bi-people"></i>
                 <span>User Management</span>
             </a>
-        </li>
+        </li> -->
 
     </ul>
 

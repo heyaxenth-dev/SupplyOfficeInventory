@@ -64,12 +64,14 @@ if ($tableExists->num_rows > 0) {
                                         <td><span class="badge bg-secondary"><?php echo htmlspecialchars($log['user_role'] ?? '-'); ?></span></td>
                                         <td>
                                             <?php
+                                            $actionLabels = ['ADD' => 'Added Item', 'EDIT' => 'Updated Stocks', 'DELETE' => 'Deleted Item'];
+                                            $actionLabel = $actionLabels[$log['action']] ?? $log['action'];
                                             $actionClass = $log['action'] === 'ADD' ? 'success' : ($log['action'] === 'DELETE' ? 'danger' : 'primary');
                                             ?>
-                                            <span class="badge bg-<?php echo $actionClass; ?>"><?php echo htmlspecialchars($log['action']); ?></span>
+                                            <span class="badge bg-<?php echo $actionClass; ?>"><?php echo htmlspecialchars($actionLabel); ?></span>
                                         </td>
                                         <td><?php echo htmlspecialchars($log['item_name'] ?? '-'); ?></td>
-                                        <td><code><?php echo htmlspecialchars($log['stock_number'] ?? '-'); ?></code></td>
+                                        <td><code><?php echo htmlspecialchars(!empty($log['stock_number']) ? $log['stock_number'] : '-'); ?></code></td>
                                         <td><small class="text-muted"><?php echo htmlspecialchars($log['changes_summary'] ?? '-'); ?></small></td>
                                     </tr>
                                     <?php endforeach; ?>

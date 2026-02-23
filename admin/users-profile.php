@@ -1,7 +1,91 @@
 <?php 
 include 'authentication.php';
 include 'config/conn.php';
+include __DIR__ . '/../config/helpers.php';
 include 'includes/login-credentials.php';
+
+$profile_message = '';
+$profile_message_type = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $user_id = $_SESSION['admin_id'] ?? null;
+    if (!$user_id) {
+        $profile_message = 'Session expired. Please log in again.';
+        $profile_message_type = 'danger';
+    } elseif ($_POST['action'] === 'update_profile') {
+        $new_name = isset($_POST['fullName']) ? normalizeTitleCase($_POST['fullName']) : '';
+        $new_email = isset($_POST['email']) ? trim($_POST['email']) : '';
+        if (empty($new_name)) {
+            $profile_message = 'Full name is required.';
+            $profile_message_type = 'danger';
+        } elseif (empty($new_email)) {
+            $profile_message = 'Email is required.';
+            $profile_message_type = 'danger';
+        } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+            $profile_message = 'Invalid email format.';
+            $profile_message_type = 'danger';
+        } else {
+            $emailCheck = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+            $emailCheck->bind_param("si", $new_email, $user_id);
+            $emailCheck->execute();
+            if ($emailCheck->get_result()->num_rows > 0) {
+                $profile_message = 'This email is already in use.';
+                $profile_message_type = 'danger';
+            } else {
+                $stmt = $conn->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
+                $stmt->bind_param("ssi", $new_name, $new_email, $user_id);
+                if ($stmt->execute()) {
+                    $name = $new_name;
+                    $email = $new_email;
+                    $profile_message = 'Profile updated successfully.';
+                    $profile_message_type = 'success';
+                } else {
+                    $profile_message = 'Failed to update profile. Please try again.';
+                    $profile_message_type = 'danger';
+                }
+                $stmt->close();
+            }
+            $emailCheck->close();
+        }
+    } elseif ($_POST['action'] === 'change_password') {
+        $current = $_POST['password'] ?? '';
+        $new_pass = $_POST['newpassword'] ?? '';
+        $renew = $_POST['renewpassword'] ?? '';
+        if (empty($current) || empty($new_pass) || empty($renew)) {
+            $profile_message = 'All password fields are required.';
+            $profile_message_type = 'danger';
+        } elseif (strlen($new_pass) < 6) {
+            $profile_message = 'New password must be at least 6 characters.';
+            $profile_message_type = 'danger';
+        } elseif ($new_pass !== $renew) {
+            $profile_message = 'New password and confirmation do not match.';
+            $profile_message_type = 'danger';
+        } else {
+            $check = $conn->prepare("SELECT password FROM users WHERE id = ?");
+            $check->bind_param("i", $user_id);
+            $check->execute();
+            $row = $check->get_result()->fetch_assoc();
+            $check->close();
+            if (!$row || !password_verify($current, $row['password'])) {
+                $profile_message = 'Current password is incorrect.';
+                $profile_message_type = 'danger';
+            } else {
+                $hash = password_hash($new_pass, PASSWORD_DEFAULT);
+                $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $stmt->bind_param("si", $hash, $user_id);
+                if ($stmt->execute()) {
+                    $profile_message = 'Password changed successfully.';
+                    $profile_message_type = 'success';
+                } else {
+                    $profile_message = 'Failed to change password. Please try again.';
+                    $profile_message_type = 'danger';
+                }
+                $stmt->close();
+            }
+        }
+    }
+}
+
 include 'includes/header.php';
 include 'includes/sidebar.php';
 ?>
@@ -19,20 +103,21 @@ include 'includes/sidebar.php';
     </div>
     <!-- End Page Title -->
 
+    <?php if (!empty($profile_message)): ?>
+    <div class="alert alert-<?= htmlspecialchars($profile_message_type) ?> alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($profile_message) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php endif; ?>
+
     <section class="section profile">
         <div class="row">
             <div class="col-xl-4">
                 <div class="card">
                     <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
-                        <img src="assets/img/profile-img.jpg" alt="Profile" class="rounded-circle" />
-                        <h2>Kevin Anderson</h2>
-                        <h3>Web Designer</h3>
-                        <div class="social-links mt-2">
-                            <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
-                            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-                            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-                            <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
-                        </div>
+                        <img src="assets/img/user-profile.png" alt="Profile" class="rounded-circle" />
+                        <h2><?= $name ?></h2>
+                        <h3><?= $role ?></h3>
                     </div>
                 </div>
             </div>
@@ -55,12 +140,6 @@ include 'includes/sidebar.php';
                             </li>
 
                             <li class="nav-item">
-                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-settings">
-                                    Settings
-                                </button>
-                            </li>
-
-                            <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-change-password">
                                     Change Password
                                 </button>
@@ -68,129 +147,36 @@ include 'includes/sidebar.php';
                         </ul>
                         <div class="tab-content pt-2">
                             <div class="tab-pane fade show active profile-overview" id="profile-overview">
-                                <h5 class="card-title">About</h5>
-                                <p class="small fst-italic">
-                                    Sunt est soluta temporibus accusantium neque nam maiores
-                                    cumque temporibus. Tempora libero non est unde veniam est
-                                    qui dolor. Ut sunt iure rerum quae quisquam autem eveniet
-                                    perspiciatis odit. Fuga sequi sed ea saepe at unde.
-                                </p>
-
                                 <h5 class="card-title">Profile Details</h5>
 
                                 <div class="row">
                                     <div class="col-lg-3 col-md-4 label">Full Name</div>
-                                    <div class="col-lg-9 col-md-8">Kevin Anderson</div>
+                                    <div class="col-lg-9 col-md-8"><?= $name ?></div>
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-lg-3 col-md-4 label">Company</div>
+                                    <div class="col-lg-3 col-md-4 label">Role</div>
                                     <div class="col-lg-9 col-md-8">
-                                        Lueilwitz, Wisoky and Leuschke
+                                        <?= $role ?>
                                     </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-3 col-md-4 label">Job</div>
-                                    <div class="col-lg-9 col-md-8">Web Designer</div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-3 col-md-4 label">Country</div>
-                                    <div class="col-lg-9 col-md-8">USA</div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-3 col-md-4 label">Address</div>
-                                    <div class="col-lg-9 col-md-8">
-                                        A108 Adam Street, New York, NY 535022
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-3 col-md-4 label">Phone</div>
-                                    <div class="col-lg-9 col-md-8">(436) 486-3538 x29071</div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-lg-3 col-md-4 label">Email</div>
-                                    <div class="col-lg-9 col-md-8">
-                                        k.anderson@example.com
-                                    </div>
+                                    <div class="col-lg-9 col-md-8"><?= $email ?></div>
                                 </div>
                             </div>
 
                             <div class="tab-pane fade profile-edit pt-3" id="profile-edit">
                                 <!-- Profile Edit Form -->
-                                <form>
-                                    <div class="row mb-3">
-                                        <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Profile
-                                            Image</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <img src="assets/img/profile-img.jpg" alt="Profile" />
-                                            <div class="pt-2">
-                                                <a href="#" class="btn btn-primary btn-sm"
-                                                    title="Upload new profile image"><i class="bi bi-upload"></i></a>
-                                                <a href="#" class="btn btn-danger btn-sm"
-                                                    title="Remove my profile image"><i class="bi bi-trash"></i></a>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <form method="post" action="">
+                                    <input type="hidden" name="action" value="update_profile" />
 
                                     <div class="row mb-3">
                                         <label for="fullName" class="col-md-4 col-lg-3 col-form-label">Full Name</label>
                                         <div class="col-md-8 col-lg-9">
                                             <input name="fullName" type="text" class="form-control" id="fullName"
-                                                value="Kevin Anderson" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="about" class="col-md-4 col-lg-3 col-form-label">About</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <textarea name="about" class="form-control" id="about"
-                                                style="height: 100px">
-												Sunt est soluta temporibus accusantium neque nam maiores cumque temporibus. Tempora libero non est unde veniam est qui dolor. Ut sunt iure rerum quae quisquam autem eveniet perspiciatis odit. Fuga sequi sed ea saepe at unde.</textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="company" class="col-md-4 col-lg-3 col-form-label">Company</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="company" type="text" class="form-control" id="company"
-                                                value="Lueilwitz, Wisoky and Leuschke" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Job" class="col-md-4 col-lg-3 col-form-label">Job</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="job" type="text" class="form-control" id="Job"
-                                                value="Web Designer" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Country" class="col-md-4 col-lg-3 col-form-label">Country</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="country" type="text" class="form-control" id="Country"
-                                                value="USA" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Address" class="col-md-4 col-lg-3 col-form-label">Address</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="address" type="text" class="form-control" id="Address"
-                                                value="A108 Adam Street, New York, NY 535022" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Phone" class="col-md-4 col-lg-3 col-form-label">Phone</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="phone" type="text" class="form-control" id="Phone"
-                                                value="(436) 486-3538 x29071" />
+                                                value="<?= htmlspecialchars($name ?? '') ?>" required />
                                         </div>
                                     </div>
 
@@ -198,43 +184,7 @@ include 'includes/sidebar.php';
                                         <label for="Email" class="col-md-4 col-lg-3 col-form-label">Email</label>
                                         <div class="col-md-8 col-lg-9">
                                             <input name="email" type="email" class="form-control" id="Email"
-                                                value="k.anderson@example.com" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Twitter" class="col-md-4 col-lg-3 col-form-label">Twitter
-                                            Profile</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="twitter" type="text" class="form-control" id="Twitter"
-                                                value="https://twitter.com/#" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Facebook" class="col-md-4 col-lg-3 col-form-label">Facebook
-                                            Profile</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="facebook" type="text" class="form-control" id="Facebook"
-                                                value="https://facebook.com/#" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Instagram" class="col-md-4 col-lg-3 col-form-label">Instagram
-                                            Profile</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="instagram" type="text" class="form-control" id="Instagram"
-                                                value="https://instagram.com/#" />
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <label for="Linkedin" class="col-md-4 col-lg-3 col-form-label">Linkedin
-                                            Profile</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <input name="linkedin" type="text" class="form-control" id="Linkedin"
-                                                value="https://linkedin.com/#" />
+                                                value="<?= htmlspecialchars($email ?? '') ?>" required />
                                         </div>
                                     </div>
 
@@ -247,61 +197,16 @@ include 'includes/sidebar.php';
                                 <!-- End Profile Edit Form -->
                             </div>
 
-                            <div class="tab-pane fade pt-3" id="profile-settings">
-                                <!-- Settings Form -->
-                                <form>
-                                    <div class="row mb-3">
-                                        <label for="fullName" class="col-md-4 col-lg-3 col-form-label">Email
-                                            Notifications</label>
-                                        <div class="col-md-8 col-lg-9">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="changesMade"
-                                                    checked />
-                                                <label class="form-check-label" for="changesMade">
-                                                    Changes made to your account
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="newProducts"
-                                                    checked />
-                                                <label class="form-check-label" for="newProducts">
-                                                    Information on new products and services
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="proOffers" />
-                                                <label class="form-check-label" for="proOffers">
-                                                    Marketing and promo offers
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="securityNotify"
-                                                    checked disabled />
-                                                <label class="form-check-label" for="securityNotify">
-                                                    Security alerts
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-center">
-                                        <button type="submit" class="btn btn-primary">
-                                            Save Changes
-                                        </button>
-                                    </div>
-                                </form>
-                                <!-- End settings Form -->
-                            </div>
-
                             <div class="tab-pane fade pt-3" id="profile-change-password">
                                 <!-- Change Password Form -->
-                                <form>
+                                <form method="post" action="">
+                                    <input type="hidden" name="action" value="change_password" />
                                     <div class="row mb-3">
                                         <label for="currentPassword" class="col-md-4 col-lg-3 col-form-label">Current
                                             Password</label>
                                         <div class="col-md-8 col-lg-9">
                                             <input name="password" type="password" class="form-control"
-                                                id="currentPassword" />
+                                                id="currentPassword" required />
                                         </div>
                                     </div>
 
@@ -310,7 +215,7 @@ include 'includes/sidebar.php';
                                             Password</label>
                                         <div class="col-md-8 col-lg-9">
                                             <input name="newpassword" type="password" class="form-control"
-                                                id="newPassword" />
+                                                id="newPassword" minlength="6" required />
                                         </div>
                                     </div>
 
@@ -319,7 +224,7 @@ include 'includes/sidebar.php';
                                             Password</label>
                                         <div class="col-md-8 col-lg-9">
                                             <input name="renewpassword" type="password" class="form-control"
-                                                id="renewPassword" />
+                                                id="renewPassword" minlength="6" required />
                                         </div>
                                     </div>
 

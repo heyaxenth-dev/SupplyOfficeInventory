@@ -24,8 +24,8 @@ if (isset($_POST['registerBtn']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
     // Prepare SQL statement to prevent SQL injection
-    $stmt = $conn->prepare("INSERT INTO users (name, email, role, department, password) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $name, $email, $role, $department, $hashed_password);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, role, password) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $name, $email, $role, $hashed_password);
     // Execute the statement
     if ($stmt->execute()) {
         $_SESSION['status'] = "Success";
@@ -68,7 +68,7 @@ if ($result->num_rows > 0) {
                 $_SESSION['admin_name'] = $user['name'];
                 $_SESSION['admin_email'] = $user['email'];
                 $_SESSION['admin_role'] = $user['role'];
-                $_SESSION['admin_department'] = $user['department'];
+                // $_SESSION['admin_department'] = $user['department'];
 
                 // Redirect to admin dashboard
                 header("Location: admin/verification_dashboard.php");
@@ -90,7 +90,7 @@ if ($result->num_rows > 0) {
                 $_SESSION['client_name'] = $user['name'];
                 $_SESSION['client_email'] = $user['email'];
                 $_SESSION['client_role'] = $user['role'];
-                $_SESSION['client_department'] = $user['department'];
+                // $_SESSION['client_department'] = $user['department'];
 
                 // Redirect to staff dashboard
                 header("Location: client/verification_dashboard.php");

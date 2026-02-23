@@ -6,6 +6,7 @@ require_once '../authentication.php';
 
 // Include database connection
 require_once '../config/conn.php';
+require_once __DIR__ . '/../../config/helpers.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -19,11 +20,11 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Get and sanitize input data
-$name = isset($_POST['name']) ? trim($_POST['name']) : '';
+// Get and sanitize input data (normalize name for uniform capitalization)
+$name = isset($_POST['name']) ? normalizeTitleCase($_POST['name']) : '';
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $role = isset($_POST['role']) ? trim($_POST['role']) : '';
-$department = isset($_POST['department']) ? trim($_POST['department']) : null;
+// $department = isset($_POST['department']) ? trim($_POST['department']) : null;
 $password = isset($_POST['password']) ? $_POST['password'] : '';
 $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
 
@@ -86,8 +87,8 @@ if ($checkResult->num_rows > 0) {
 // Hash the password
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-// Prepare SQL statement
-$sql = "INSERT INTO users (name, email, role, department, password) VALUES (?, ?, ?, ?, ?)";
+// Prepare SQL statement (department commented out)
+$sql = "INSERT INTO users (name, email, role, password) VALUES (?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
@@ -96,7 +97,7 @@ if (!$stmt) {
 }
 
 // Bind parameters
-$stmt->bind_param("sssss", $name, $email, $role, $department, $hashed_password);
+$stmt->bind_param("ssss", $name, $email, $role, $hashed_password);
 
 // Execute statement
 if ($stmt->execute()) {

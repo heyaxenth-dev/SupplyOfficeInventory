@@ -29,10 +29,10 @@
                                 <option value="Staff">Staff</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="department" class="form-label">Department</label>
                             <input type="text" class="form-control" id="department" name="department">
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -104,10 +104,10 @@
                                 <option value="Staff">Staff</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="edit_department" class="form-label">Department</label>
                             <input type="text" class="form-control" id="edit_department" name="department">
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -169,10 +169,10 @@
                         <label class="form-label fw-bold text-muted">Role</label>
                         <p id="view_user_role" class="mb-0"></p>
                     </div>
-                    <div class="col-md-6">
+                    <!-- <div class="col-md-6">
                         <label class="form-label fw-bold text-muted">Department</label>
                         <p id="view_user_department" class="mb-0"></p>
-                    </div>
+                    </div> -->
                 </div>
 
                 <div class="row">
@@ -279,13 +279,13 @@ $(document).ready(function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var role = $(this).data('role');
-        var department = $(this).data('department');
+        // var department = $(this).data('department');
 
         $('#edit_user_id').val(id);
         $('#edit_name').val(name);
         $('#edit_email').val(email);
         $('#edit_role').val(role);
-        $('#edit_department').val(department);
+        // $('#edit_department').val(department);
         $('#edit_password').val('');
         $('#edit_confirm_password').val('');
 
@@ -376,7 +376,7 @@ $(document).ready(function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var role = $(this).data('role');
-        var department = $(this).data('department');
+        // var department = $(this).data('department');
         var createdAt = $(this).data('created-at');
 
         var formatDateTime = function(dateString) {
@@ -407,7 +407,7 @@ $(document).ready(function() {
         $('#view_user_email').text(email);
         $('#view_user_role').html('<span class="' + roleClass + '">' + roleIcon + ' ' + role +
             '</span>');
-        $('#view_user_department').text(department || 'N/A');
+        // $('#view_user_department').text(department || 'N/A');
         $('#view_user_created_at').text(formatDateTime(createdAt));
 
         $('#viewUserModal').modal('show');

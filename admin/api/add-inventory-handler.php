@@ -7,6 +7,7 @@ require_once '../authentication.php';
 // Include database connection
 require_once '../config/conn.php';
 require_once __DIR__ . '/../../config/audit_logger.php';
+require_once __DIR__ . '/../../config/helpers.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -27,11 +28,11 @@ if ($tableCheck->num_rows == 0) {
     exit;
 }
 
-// Get and sanitize input data
-$item_name = isset($_POST['item_name']) ? trim($_POST['item_name']) : '';
-$description = isset($_POST['description']) ? trim($_POST['description']) : null;
-$category = isset($_POST['category']) ? trim($_POST['category']) : '';
-$unit_of_measure = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : null;
+// Get and sanitize input data (normalize for uniform capitalization)
+$item_name = isset($_POST['item_name']) ? normalizeTitleCase($_POST['item_name']) : '';
+$description = isset($_POST['description']) ? normalizeSentenceCase($_POST['description']) : null;
+$category = isset($_POST['category']) ? normalizeTitleCase($_POST['category']) : '';
+$unit_of_measure = isset($_POST['unit_of_measure']) && trim($_POST['unit_of_measure']) !== '' ? normalizeLowerCase($_POST['unit_of_measure']) : null;
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
 

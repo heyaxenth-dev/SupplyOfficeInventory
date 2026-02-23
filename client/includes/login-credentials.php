@@ -13,7 +13,7 @@ if ($result->num_rows > 0) {
     while($user = $result->fetch_assoc()) {
         $name = $user['name'];
         $email = $user['email'];
-        $department = $user['department'];
+        // $department = $user['department'];
     }
 } 
 ?>

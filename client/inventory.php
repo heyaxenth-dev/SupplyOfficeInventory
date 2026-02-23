@@ -25,21 +25,19 @@ include 'includes/sidebar.php';
 
                 <div class="card">
                     <div class="card-body mt-3">
-                        <!-- <h5 class="card-title">Datatables</h5> -->
-
-                        <!-- Table with stripped rows -->
-                        <table class="table" id="datatable">
-                            <thead>
+                        <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover align-middle" id="datatable">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Stock Number</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th>Unit of Measure</th>
-                                    <th>Quantity</th>
-                                    <th>Status</th>
-                                    <th>Last Restocked</th>
-                                    <th>Actions</th>
+                                    <th scope="col">Item</th>
+                                    <th scope="col">Stock Number</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Unit of Measure</th>
+                                    <th scope="col" class="text-end">Quantity</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Last Restocked</th>
+                                    <th scope="col" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -124,7 +122,7 @@ include 'includes/sidebar.php';
                                 ?>
                             </tbody>
                         </table>
-                        <!-- End Table with stripped rows -->
+                        </div>
 
                     </div>
                 </div>

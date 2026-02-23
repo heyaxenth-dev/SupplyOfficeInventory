@@ -7,6 +7,7 @@ require_once '../authentication.php';
 // Include database connection
 require_once '../config/conn.php';
 require_once __DIR__ . '/../../config/audit_logger.php';
+require_once __DIR__ . '/../../config/helpers.php';
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -20,13 +21,14 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Get and sanitize input data
+// Get and sanitize input data (normalize for uniform capitalization)
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-$item_name = isset($_POST['item_name']) ? trim($_POST['item_name']) : '';
-$description = isset($_POST['description']) ? trim($_POST['description']) : null;
-$stock_number = isset($_POST['stock_number']) ? trim($_POST['stock_number']) : null;
-$category = isset($_POST['category']) ? trim($_POST['category']) : '';
-$unit_of_measure = isset($_POST['unit_of_measure']) ? trim($_POST['unit_of_measure']) : null;
+$item_name = isset($_POST['item_name']) ? normalizeTitleCase($_POST['item_name']) : '';
+$description = isset($_POST['description']) ? normalizeSentenceCase($_POST['description']) : null;
+// Use POST stock_number if provided (e.g. from Inventory page); otherwise use existing item's (e.g. from Verification page)
+$stock_number = isset($_POST['stock_number']) && trim((string)$_POST['stock_number']) !== '' ? trim($_POST['stock_number']) : null;
+$category = isset($_POST['category']) ? normalizeTitleCase($_POST['category']) : '';
+$unit_of_measure = isset($_POST['unit_of_measure']) && trim($_POST['unit_of_measure']) !== '' ? normalizeLowerCase($_POST['unit_of_measure']) : null;
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
 
@@ -99,7 +101,8 @@ $stmt->bind_param("sssssdis",
 
 // Execute statement
 if ($stmt->execute()) {
-    logInventoryChange($conn, 'EDIT', $id, $item_name, $stock_number, $changesSummary);
+    $logStockNumber = $stock_number !== null ? $stock_number : ($oldItem['stock_number'] ?? null);
+    logInventoryChange($conn, 'EDIT', $id, $item_name, $logStockNumber, $changesSummary);
     echo json_encode([
         'success' => true, 
         'message' => 'Inventory item updated successfully!'

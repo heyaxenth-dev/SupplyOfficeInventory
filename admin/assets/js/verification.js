@@ -23,7 +23,7 @@ $(document).ready(function () {
 
 		// Clear previous results
 		statusDiv.html(
-			'<div class="alert alert-info"><i class="bi bi-arrow-repeat spin"></i> Running verification...</div>'
+			'<div class="alert alert-info"><i class="bi bi-arrow-repeat spin"></i> Running verification...</div>',
 		);
 		errorList.html('');
 		warningList.html('');
@@ -160,7 +160,7 @@ $(document).ready(function () {
 		if (data.summary) {
 			$('#summary-total-items').text(data.summary.total_items || 0);
 			$('#summary-total-transactions').text(
-				data.summary.total_transactions || 0
+				data.summary.total_transactions || 0,
 			);
 			$('#summary-error-count').text(data.summary.error_count || 0);
 			$('#summary-warning-count').text(data.summary.warning_count || 0);
@@ -201,8 +201,12 @@ $(document).ready(function () {
 			let warningHtml = '<div class="verification-list">';
 			data.warnings.forEach((warning, index) => {
 				const hasItemId = warning.item_id != null && warning.item_id > 0;
-				const itemClass = warning.type === 'STATUS_INCONSISTENCY' ? 'verification-item-status-inconsistency' :
-					warning.type === 'LOW_STOCK_WARNING' ? 'verification-item-low-stock' : 'verification-item-other';
+				const itemClass =
+					warning.type === 'STATUS_INCONSISTENCY'
+						? 'verification-item-status-inconsistency'
+						: warning.type === 'LOW_STOCK_WARNING'
+							? 'verification-item-low-stock'
+							: 'verification-item-other';
 				warningHtml += `
                     <div class="verification-list-item ${itemClass}">
                         <div class="item-content">
@@ -270,30 +274,53 @@ $(document).ready(function () {
 					$('#ve_item_name').val(item.item_name);
 					$('#ve_description').val(item.description || '');
 					$('#ve_stock_number').val(item.stock_number || '');
+					$('#ve_stock_number_hidden').val(item.stock_number || '');
 					$('#ve_category').val(item.category || '');
 					$('#ve_unit_of_measure').val(item.unit_of_measure || '');
 					$('#ve_unit_value').val(item.unit_value || '');
 					$('#ve_quantity').val(item.quantity);
 					var qty = parseInt(item.quantity) || 0;
-					var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
-					$('#ve_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
-					$('#ve_last_restocked').val(item.last_restocked ? item.last_restocked.split(' ')[0] : '');
-					new bootstrap.Modal(document.getElementById('verificationEditModal')).show();
+					var statusText =
+						qty === 0 ? 'Out of Stock' : qty <= 10 ? 'Low Stock' : 'In Stock';
+					$('#ve_status_preview').html(
+						'<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' +
+							statusText +
+							'</small>',
+					);
+					$('#ve_last_restocked').val(
+						item.last_restocked ? item.last_restocked.split(' ')[0] : '',
+					);
+					new bootstrap.Modal(
+						document.getElementById('verificationEditModal'),
+					).show();
 				} else {
-					Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Failed to load item' });
+					Swal.fire({
+						icon: 'error',
+						title: 'Error',
+						text: res.message || 'Failed to load item',
+					});
 				}
 			},
 			error: function () {
-				Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load item data' });
-			}
+				Swal.fire({
+					icon: 'error',
+					title: 'Error',
+					text: 'Failed to load item data',
+				});
+			},
 		});
 	});
 
 	// Update status preview when quantity changes in verification edit form
 	$(document).on('input', '#ve_quantity', function () {
 		const qty = parseInt($(this).val()) || 0;
-		const statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
-		$('#ve_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
+		const statusText =
+			qty === 0 ? 'Out of Stock' : qty <= 10 ? 'Low Stock' : 'In Stock';
+		$('#ve_status_preview').html(
+			'<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' +
+				statusText +
+				'</small>',
+		);
 	});
 
 	// Verification edit form submit
@@ -302,7 +329,11 @@ $(document).ready(function () {
 		const form = $(this);
 		const submitBtn = form.find('button[type="submit"]');
 		const originalText = submitBtn.html();
-		submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Updating...');
+		submitBtn
+			.prop('disabled', true)
+			.html(
+				'<span class="spinner-border spinner-border-sm" role="status"></span> Updating...',
+			);
 
 		$.ajax({
 			url: 'api/edit-inventory-handler.php',
@@ -311,11 +342,23 @@ $(document).ready(function () {
 			dataType: 'json',
 			success: function (res) {
 				if (res.success) {
-					Swal.fire({ icon: 'success', title: 'Updated!', text: res.message, timer: 2000, showConfirmButton: false });
-					bootstrap.Modal.getInstance(document.getElementById('verificationEditModal')).hide();
+					Swal.fire({
+						icon: 'success',
+						title: 'Updated!',
+						text: res.message,
+						timer: 2000,
+						showConfirmButton: false,
+					});
+					bootstrap.Modal.getInstance(
+						document.getElementById('verificationEditModal'),
+					).hide();
 					runVerification(); // Re-run to refresh results
 				} else {
-					Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Update failed' });
+					Swal.fire({
+						icon: 'error',
+						title: 'Error',
+						text: res.message || 'Update failed',
+					});
 					submitBtn.prop('disabled', false).html(originalText);
 				}
 			},
@@ -327,7 +370,7 @@ $(document).ready(function () {
 				} catch (e) {}
 				Swal.fire({ icon: 'error', title: 'Error', text: msg });
 				submitBtn.prop('disabled', false).html(originalText);
-			}
+			},
 		});
 	});
 });

@@ -139,6 +139,7 @@ include 'includes/sidebar.php';
             </div>
             <form id="verificationEditForm">
                 <input type="hidden" id="ve_item_id" name="id">
+                <input type="hidden" id="ve_stock_number_hidden" name="stock_number">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
