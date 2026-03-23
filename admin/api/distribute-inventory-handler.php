@@ -5,6 +5,7 @@ require_once '../authentication.php';
 require_once '../config/conn.php';
 require_once __DIR__ . '/../../config/audit_logger.php';
 require_once __DIR__ . '/../../config/helpers.php';
+require_once __DIR__ . '/../../config/distribution_record.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
@@ -70,6 +71,7 @@ if (!$upd) {
 $upd->bind_param("isi", $newQty, $status, $id);
 
 if ($upd->execute()) {
+    recordInventoryDistribution($conn, $id, $department, $distributeQty, $currentQty, $newQty);
     $stockNum = $item['stock_number'] ?? '';
     $changesSummary = 'Distributed ' . $distributeQty . ' to ' . $department . '; Qty: ' . $currentQty . ' → ' . $newQty;
     logInventoryChange($conn, 'EDIT', $id, $item['item_name'], $stockNum, $changesSummary);

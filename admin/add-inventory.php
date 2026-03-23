@@ -175,6 +175,81 @@ $(document).ready(function() {
         $('#addInventoryForm').find('button[type="submit"]').prop('disabled', false).html('Add Item');
     });
 
+    function escHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderDistributionPreviewTable(rows, maxRows) {
+        var slice = maxRows ? rows.slice(0, maxRows) : rows;
+        if (!slice.length) {
+            return '<p class="text-muted mb-0 small">No distribution records yet. Use <span class="text-success">Distribute</span> to send stock to a department.</p>';
+        }
+        var html = '<div class="table-responsive" style="max-height:220px;overflow-y:auto;"><table class="table table-sm table-bordered mb-0"><thead class="table-light sticky-top"><tr><th>Date</th><th>Department</th><th class="text-end">Qty</th><th>Stock</th><th>By</th></tr></thead><tbody>';
+        slice.forEach(function(r) {
+            var dt = r.created_at ? new Date(r.created_at).toLocaleString() : '-';
+            var stockInfo = (r.quantity_before != null && r.quantity_after != null) ?
+                (r.quantity_before + ' → ' + r.quantity_after) : '-';
+            html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r.department) + '</td><td class="text-end">' + escHtml(String(r.quantity)) + '</td><td class="small text-muted">' + escHtml(stockInfo) + '</td><td class="small">' + escHtml(r.user_name || '-') + '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+        if (maxRows && rows.length > maxRows) {
+            html += '<p class="small text-muted mt-2 mb-0">Showing ' + maxRows + ' most recent. Use <strong>Full history</strong> for all records.</p>';
+        }
+        return html;
+    }
+
+    function loadDistributionPreview(inventoryId) {
+        $('#view_distribution_preview').html('<span class="spinner-border spinner-border-sm"></span> Loading…');
+        $.getJSON('api/get-distributions.php', { id: inventoryId }, function(res) {
+            if (res.table_missing) {
+                $('#view_distribution_preview').html('<p class="text-warning small mb-0">Run <code>config/inventory_distribution.sql</code> in your database to track distributions.</p>');
+                return;
+            }
+            if (!res.success) {
+                $('#view_distribution_preview').html('<p class="text-danger small mb-0">Could not load distribution history.</p>');
+                return;
+            }
+            $('#view_distribution_preview').html(renderDistributionPreviewTable(res.distributions || [], 5));
+        }).fail(function() {
+            $('#view_distribution_preview').html('<p class="text-danger small mb-0">Could not load distribution history.</p>');
+        });
+    }
+
+    function loadDistributionHistoryFull(inventoryId) {
+        $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading…</td></tr>');
+        $.getJSON('api/get-distributions.php', { id: inventoryId }, function(res) {
+            if (res.table_missing) {
+                $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-warning">Create the table using <code>config/inventory_distribution.sql</code>.</td></tr>');
+                return;
+            }
+            var rows = res.distributions || [];
+            if (!rows.length) {
+                $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-center text-muted py-3">No distributions recorded for this item.</td></tr>');
+                return;
+            }
+            var html = '';
+            rows.forEach(function(r) {
+                var dt = r.created_at ? new Date(r.created_at).toLocaleString() : '-';
+                var stockInfo = (r.quantity_before != null && r.quantity_after != null) ?
+                    (r.quantity_before + ' → ' + r.quantity_after) : '-';
+                html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r.department) + '</td><td class="text-end">' + escHtml(String(r.quantity)) + '</td><td class="small">' + escHtml(stockInfo) + '</td><td>' + escHtml(r.user_name || '-') + '</td></tr>';
+            });
+            $('#distributionHistoryBody').html(html);
+        }).fail(function() {
+            $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-danger">Failed to load.</td></tr>');
+        });
+    }
+
+    $(document).on('click', '#btnOpenDistributionHistory', function() {
+        var id = $('#viewInventoryModal').attr('data-inventory-id');
+        if (!id) return;
+        var name = $('#view_item_name').text() || 'Item';
+        $('#distributionHistoryModalLabelItem').text(name);
+        $('#distributionHistoryModal').modal('show');
+        loadDistributionHistoryFull(id);
+    });
+
     // Handle view button click
     $(document).on('click', '.view-item', function() {
         var id = $(this).data('id');
@@ -252,6 +327,9 @@ $(document).ready(function() {
         } else {
             $('#view_total_value').text('N/A');
         }
+
+        $('#viewInventoryModal').attr('data-inventory-id', id);
+        loadDistributionPreview(id);
 
         // Show view modal
         $('#viewInventoryModal').modal('show');
@@ -726,11 +804,55 @@ $(document).ready(function() {
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold text-muted">Last Updated</label>
                         <p id="view_updated_at" class="mb-0"></p>
                     </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <h6 class="mb-0"><i class="bi bi-box-arrow-right text-success me-1"></i>Distribution history</h6>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btnOpenDistributionHistory">
+                        <i class="bi bi-list-ul me-1"></i>Full history
+                    </button>
+                </div>
+                <div id="view_distribution_preview" class="small"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full distribution history (all records for this item) -->
+<div class="modal fade" id="distributionHistoryModal" tabindex="-1" aria-labelledby="distributionHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="distributionHistoryModalLabel">
+                    <i class="bi bi-list-ul me-2"></i>Distribution history — <span id="distributionHistoryModalLabelItem"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date &amp; time</th>
+                                <th>Department</th>
+                                <th class="text-end">Quantity</th>
+                                <th>Stock (before → after)</th>
+                                <th>Recorded by</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distributionHistoryBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="modal-footer">
