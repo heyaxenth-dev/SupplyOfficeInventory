@@ -275,7 +275,13 @@ $(document).ready(function () {
 					$('#ve_description').val(item.description || '');
 					$('#ve_stock_number').val(item.stock_number || '');
 					$('#ve_stock_number_hidden').val(item.stock_number || '');
-					$('#ve_category').val(item.category || '');
+					var $veCat = $('#ve_category');
+					var catVal = item.category || '';
+					$veCat.find('option[data-legacy]').remove();
+					$veCat.val(catVal);
+					if (catVal && $veCat.val() !== String(catVal)) {
+						$veCat.append($('<option>', { value: catVal, text: catVal + ' (legacy)', 'data-legacy': '1', selected: true }));
+					}
 					$('#ve_unit_of_measure').val(item.unit_of_measure || '');
 					$('#ve_unit_value').val(item.unit_value || '');
 					$('#ve_quantity').val(item.quantity);

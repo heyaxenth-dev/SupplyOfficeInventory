@@ -2,6 +2,7 @@
 include 'authentication.php';
 include 'config/conn.php';
 include 'includes/login-credentials.php';
+require_once __DIR__ . '/../config/inventory_categories.php';
 include 'includes/header.php';
 include 'includes/sidebar.php';
 ?>
@@ -160,7 +161,12 @@ include 'includes/sidebar.php';
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="ve_category" class="form-label">Category <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ve_category" name="category" required>
+                            <select class="form-select" id="ve_category" name="category" required>
+                                <option value="">Select Category</option>
+                                <?php foreach (getInventoryCategories() as $inv_cat): ?>
+                                <option value="<?php echo htmlspecialchars($inv_cat); ?>"><?php echo htmlspecialchars($inv_cat); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="ve_unit_of_measure" class="form-label">Unit of Measure</label>

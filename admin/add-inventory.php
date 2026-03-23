@@ -1,3 +1,6 @@
+<?php
+require_once __DIR__ . '/../config/inventory_categories.php';
+?>
 <!-- Add Inventory Modal -->
 <div class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" id="addInventoryModal" tabindex="-1"
     aria-labelledby="addInventoryModalLabel" aria-hidden="true">
@@ -27,7 +30,12 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="category" name="category" required>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <?php foreach (getInventoryCategories() as $inv_cat): ?>
+                                <option value="<?php echo htmlspecialchars($inv_cat); ?>"><?php echo htmlspecialchars($inv_cat); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="unit_of_measure" class="form-label">Unit of Measure</label>
@@ -267,7 +275,12 @@ $(document).ready(function() {
         $('#edit_item_name').val(itemName);
         $('#edit_description').val(description);
         $('#edit_stock_number').val(stockNumber);
-        $('#edit_category').val(category);
+        var $editCat = $('#edit_category');
+        $editCat.find('option[data-legacy]').remove();
+        $editCat.val(category);
+        if (category && $editCat.val() !== String(category)) {
+            $editCat.append($('<option>', { value: category, text: category + ' (legacy)', 'data-legacy': '1', selected: true }));
+        }
         $('#edit_unit_of_measure').val(unitOfMeasure);
         $('#edit_unit_value').val(unitValue);
         $('#edit_quantity').val(quantity);
@@ -355,6 +368,82 @@ $(document).ready(function() {
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
+    });
+
+    // Distribute to department — open modal
+    $(document).on('click', '.distribute-item', function() {
+        var id = $(this).data('id');
+        var itemName = $(this).data('item-name');
+        var stockNumber = $(this).data('stock-number');
+        var qty = parseInt($(this).data('quantity'), 10) || 0;
+
+        $('#distribute_item_id').val(id);
+        $('#distribute_item_display').text(itemName);
+        $('#distribute_stock_display').text(stockNumber || '-');
+        $('#distribute_available_qty').text(qty);
+        $('#distribute_department').val('');
+        $('#distribute_quantity').val('').attr('max', qty > 0 ? qty : 1);
+        if (qty <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Out of stock',
+                text: 'This item has no quantity available to distribute.'
+            });
+            return;
+        }
+        $('#distributeInventoryModal').modal('show');
+    });
+
+    $('#distributeInventoryForm').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        var maxQ = parseInt($('#distribute_quantity').attr('max'), 10) || 0;
+        var reqQ = parseInt($('#distribute_quantity').val(), 10) || 0;
+        if (reqQ > maxQ) {
+            Swal.fire({ icon: 'error', title: 'Invalid quantity', text: 'Cannot distribute more than available (' + maxQ + ').' });
+            return;
+        }
+
+        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Processing...');
+
+        $.ajax({
+            url: 'api/distribute-inventory-handler.php',
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Distributed',
+                        text: response.message || 'Distribution recorded.',
+                        showConfirmButton: false,
+                        timer: 1800
+                    });
+                    $('#distributeInventoryModal').modal('hide');
+                    setTimeout(function() { location.reload(); }, 1800);
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: response.message || 'Distribution failed.' });
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function(xhr) {
+                var msg = 'An error occurred.';
+                try {
+                    var r = JSON.parse(xhr.responseText);
+                    if (r.message) msg = r.message;
+                } catch (err) {}
+                Swal.fire({ icon: 'error', title: 'Error', text: msg });
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    $('#distributeInventoryModal').on('hidden.bs.modal', function() {
+        $('#distributeInventoryForm')[0].reset();
+        $('#distributeInventoryForm').find('button[type="submit"]').prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Confirm distribution');
     });
 
     // Handle delete button click
@@ -463,7 +552,12 @@ $(document).ready(function() {
                         <div class="col-md-4 mb-3">
                             <label for="edit_category" class="form-label">Category <span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_category" name="category" required>
+                            <select class="form-select" id="edit_category" name="category" required>
+                                <option value="">Select Category</option>
+                                <?php foreach (getInventoryCategories() as $inv_cat): ?>
+                                <option value="<?php echo htmlspecialchars($inv_cat); ?>"><?php echo htmlspecialchars($inv_cat); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="edit_unit_of_measure" class="form-label">Unit of Measure</label>
@@ -511,6 +605,49 @@ $(document).ready(function() {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Distribute to Department Modal -->
+<div class="modal fade" id="distributeInventoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="distributeInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="distributeInventoryModalLabel">
+                    <i class="bi bi-box-arrow-right me-2"></i>Distribute to Department
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="distributeInventoryForm">
+                <input type="hidden" id="distribute_item_id" name="id">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Stock will be reduced by the quantity you send to the department.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Item</label>
+                        <p class="mb-0" id="distribute_item_display"></p>
+                        <small class="text-muted">Stock No.: <span id="distribute_stock_display"></span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Available quantity</label>
+                        <p class="mb-0 fs-5 fw-bold text-primary" id="distribute_available_qty"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="distribute_department" class="form-label">Department <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="distribute_department" name="department" required
+                            placeholder="e.g. Accounting, IT, Registrar">
+                    </div>
+                    <div class="mb-3">
+                        <label for="distribute_quantity" class="form-label">Quantity to distribute <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="distribute_quantity" name="quantity" required min="1" step="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Confirm distribution</button>
                 </div>
             </form>
         </div>

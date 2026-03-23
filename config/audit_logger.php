@@ -32,7 +32,10 @@ function logInventoryChange($conn, $action, $itemId = null, $itemName = null, $s
     $stmt = $conn->prepare("INSERT INTO inventory_audit_log (user_id, user_name, user_role, action, item_id, item_name, stock_number, changes_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) return;
 
-    $stmt->bind_param("ississss", $userId, $userName, $userRole, $action, $itemId, $itemName, $stockNumber, $changesSummary);
+    // Types must match: user_id(i), user_name(s), user_role(s), action(s), item_id(i), item_name(s), stock_number(s), changes_summary(s)
+    // Bugfix: "ississss" (i-s-s-i-...) wrongly bound action as int — action column was empty/wrong in DB.
+    $types = implode('', ['i', 's', 's', 's', 'i', 's', 's', 's']);
+    $stmt->bind_param($types, $userId, $userName, $userRole, $action, $itemId, $itemName, $stockNumber, $changesSummary);
     $stmt->execute();
     $stmt->close();
 }

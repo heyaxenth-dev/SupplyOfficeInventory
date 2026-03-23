@@ -26,24 +26,24 @@ include 'includes/sidebar.php';
                 <div class="card">
                     <div class="card-body mt-3">
                         <div class="table-responsive">
-                        <table class="table table-striped table-bordered table-hover align-middle" id="datatable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col">Item</th>
-                                    <th scope="col">Stock Number</th>
-                                    <th scope="col">Description</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">Unit of Measure</th>
-                                    <th scope="col" class="text-end">Quantity</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Last Restocked</th>
-                                    <th scope="col" class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
+                            <table class="table table-striped table-bordered table-hover align-middle" id="datatable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Item</th>
+                                        <th scope="col">Stock Number</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Category</th>
+                                        <th scope="col">Unit of Measure</th>
+                                        <th scope="col" class="text-end">Quantity</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Last Restocked</th>
+                                        <th scope="col" class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
                                 // Fetch inventory items from database
-                                $sql = "SELECT * FROM inventory ORDER BY id DESC";
+                                $sql = "SELECT * FROM inventory ORDER BY updated_at DESC";
                                 $result = $conn->query($sql);
                                 
                                 if ($result && $result->num_rows > 0) {
@@ -61,67 +61,76 @@ include 'includes/sidebar.php';
                                         
                                         $lastRestocked = $row['updated_at'] ? date('M d, Y', strtotime($row['updated_at'])) : 'N/A';
                                 ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($row['item_name']); ?></td>
-                                    <td><strong><?php echo htmlspecialchars($row['stock_number']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($row['description'] ?? ''); ?></td>
-                                    <td><?php echo htmlspecialchars($row['category']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['unit_of_measure'] ?? 'N/A'); ?></td>
-                                    <td><?php echo number_format($row['quantity']); ?></td>
-                                    <td><?php echo $statusDisplay; ?></td>
-                                    <td><?php echo $lastRestocked; ?></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info border-0 view-item"
-                                            data-id="<?php echo $row['id']; ?>"
-                                            data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
-                                            data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
-                                            data-stock-number="<?php echo htmlspecialchars($row['stock_number']); ?>"
-                                            data-category="<?php echo htmlspecialchars($row['category']); ?>"
-                                            data-unit-of-measure="<?php echo htmlspecialchars($row['unit_of_measure'] ?? ''); ?>"
-                                            data-unit-value="<?php echo $row['unit_value'] ?? ''; ?>"
-                                            data-quantity="<?php echo $row['quantity']; ?>"
-                                            data-status="<?php echo htmlspecialchars($row['status']); ?>"
-                                            data-last-restocked="<?php echo $row['last_restocked'] ?? ''; ?>"
-                                            data-created-at="<?php echo $row['created_at'] ?? ''; ?>"
-                                            data-updated-at="<?php echo $row['updated_at'] ?? ''; ?>"
-                                            title="View Details">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-primary border-0 edit-item"
-                                            data-id="<?php echo $row['id']; ?>"
-                                            data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
-                                            data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
-                                            data-stock-number="<?php echo htmlspecialchars($row['stock_number']); ?>"
-                                            data-category="<?php echo htmlspecialchars($row['category']); ?>"
-                                            data-unit-of-measure="<?php echo htmlspecialchars($row['unit_of_measure'] ?? ''); ?>"
-                                            data-unit-value="<?php echo $row['unit_value'] ?? ''; ?>"
-                                            data-quantity="<?php echo $row['quantity']; ?>"
-                                            data-status="<?php echo htmlspecialchars($row['status']); ?>"
-                                            data-last-restocked="<?php echo $row['last_restocked'] ?? ''; ?>"
-                                            title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger border-0 delete-item"
-                                            data-id="<?php echo $row['id']; ?>"
-                                            data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
-                                            title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($row['item_name']); ?></td>
+                                        <td><strong><?php echo htmlspecialchars($row['stock_number']); ?></strong></td>
+                                        <td><?php echo htmlspecialchars($row['description'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($row['category']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['unit_of_measure'] ?? 'N/A'); ?></td>
+                                        <td><?php echo number_format($row['quantity']); ?></td>
+                                        <td><?php echo $statusDisplay; ?></td>
+                                        <td><?php echo $lastRestocked; ?></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info border-0 view-item"
+                                                data-id="<?php echo $row['id']; ?>"
+                                                data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
+                                                data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
+                                                data-stock-number="<?php echo htmlspecialchars($row['stock_number']); ?>"
+                                                data-category="<?php echo htmlspecialchars($row['category']); ?>"
+                                                data-unit-of-measure="<?php echo htmlspecialchars($row['unit_of_measure'] ?? ''); ?>"
+                                                data-unit-value="<?php echo $row['unit_value'] ?? ''; ?>"
+                                                data-quantity="<?php echo $row['quantity']; ?>"
+                                                data-status="<?php echo htmlspecialchars($row['status']); ?>"
+                                                data-last-restocked="<?php echo $row['last_restocked'] ?? ''; ?>"
+                                                data-created-at="<?php echo $row['created_at'] ?? ''; ?>"
+                                                data-updated-at="<?php echo $row['updated_at'] ?? ''; ?>"
+                                                title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-primary border-0 edit-item"
+                                                data-id="<?php echo $row['id']; ?>"
+                                                data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
+                                                data-description="<?php echo htmlspecialchars($row['description'] ?? ''); ?>"
+                                                data-stock-number="<?php echo htmlspecialchars($row['stock_number']); ?>"
+                                                data-category="<?php echo htmlspecialchars($row['category']); ?>"
+                                                data-unit-of-measure="<?php echo htmlspecialchars($row['unit_of_measure'] ?? ''); ?>"
+                                                data-unit-value="<?php echo $row['unit_value'] ?? ''; ?>"
+                                                data-quantity="<?php echo $row['quantity']; ?>"
+                                                data-status="<?php echo htmlspecialchars($row['status']); ?>"
+                                                data-last-restocked="<?php echo $row['last_restocked'] ?? ''; ?>"
+                                                title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-success border-0 distribute-item"
+                                                data-id="<?php echo $row['id']; ?>"
+                                                data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
+                                                data-stock-number="<?php echo htmlspecialchars($row['stock_number']); ?>"
+                                                data-quantity="<?php echo (int) $row['quantity']; ?>"
+                                                title="Distribute to department">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger border-0 delete-item"
+                                                data-id="<?php echo $row['id']; ?>"
+                                                data-item-name="<?php echo htmlspecialchars($row['item_name']); ?>"
+                                                title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <?php
                                     }
                                 } else {
                                 ?>
-                                <tr>
-                                    <td colspan="9" class="text-center">No inventory items found. Click "Add Item" to
-                                        get started.</td>
-                                </tr>
-                                <?php
+                                    <tr>
+                                        <td colspan="9" class="text-center">No inventory items found. Click "Add Item"
+                                            to
+                                            get started.</td>
+                                    </tr>
+                                    <?php
                                 }
                                 ?>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
                         </div>
 
                     </div>
