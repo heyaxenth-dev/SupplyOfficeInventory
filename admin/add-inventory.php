@@ -715,8 +715,28 @@ $(document).ready(function() {
                     </div>
                     <div class="mb-3">
                         <label for="distribute_department" class="form-label">Department <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="distribute_department" name="department" required
-                            placeholder="e.g. Accounting, IT, Registrar">
+                        <select class="form-select" id="distribute_department" name="department" required>
+                            <option value="" selected disabled>Select department</option>
+                            <option value="BSCS">BSCS</option>
+                            <option value="CAFFS">CAFFS</option>
+                            <option value="CTE">CTE</option>
+                            <option value="Registrar">Registrar</option>
+                            <option value="Clinic">Clinic</option>
+                            <option value="Cashier">Cashier</option>
+                            <option value="GAD Ofc">GAD Ofc</option>
+                            <option value="Guidance">Guidance</option>
+                            <option value="Library">Library</option>
+                            <option value="UASG Ofc">UASG Ofc</option>
+                            <option value="BOAS ofc">BOAS ofc</option>
+                            <option value="SAS">SAS</option>
+                            <option value="RSCS">RSCS</option>
+                            <option value="Sports Ofc">Sports Ofc</option>
+                            <option value="ACADS Ofc">ACADS Ofc</option>
+                            <option value="HR Ofc">HR Ofc</option>
+                            <option value="Finance Ofc">Finance Ofc</option>
+                            <option value="AI Ofc">AI Ofc</option>
+                            <option value="Director’s Ofc">Director’s Ofc</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="distribute_quantity" class="form-label">Quantity to distribute <span class="text-danger">*</span></label>
