@@ -48,11 +48,106 @@ $startDate = $reportMonthFrom . '-01';
 $endDate = date('Y-m-t', strtotime($reportMonthTo . '-01'));
 $reportDate = date('F d, Y', strtotime($endDate));
 
-// Fetch inventory items created within the date range
-$stmt = $conn->prepare("SELECT * FROM inventory 
+// Filters
+$selectedStatus = isset($_GET['status']) ? trim($_GET['status']) : '';
+$selectedCategory = isset($_GET['category']) ? trim($_GET['category']) : '';
+$selectedDepartment = isset($_GET['department']) ? trim($_GET['department']) : '';
+
+// Validate status against known inventory enum values
+$validStatuses = ['In Stock', 'Low Stock', 'Out of Stock'];
+if ($selectedStatus !== '' && !in_array($selectedStatus, $validStatuses, true)) {
+    $selectedStatus = '';
+}
+
+// Check if inventory_distributions table exists (department filter depends on it)
+$hasDistributions = false;
+$tableCheck = $conn->query("SHOW TABLES LIKE 'inventory_distributions'");
+if ($tableCheck && $tableCheck->num_rows > 0) {
+    $hasDistributions = true;
+}
+if (!$hasDistributions) {
+    $selectedDepartment = '';
+}
+
+// Build dropdown options based on the selected month/year range
+$categoryOptions = [];
+$categoryStmt = $conn->prepare("SELECT DISTINCT category
+        FROM inventory
         WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?
-        ORDER BY item_name ASC");
-$stmt->bind_param("ss", $startDate, $endDate);
+          AND category IS NOT NULL AND category <> ''
+        ORDER BY category ASC");
+$categoryStmt->bind_param("ss", $startDate, $endDate);
+$categoryStmt->execute();
+$categoryRes = $categoryStmt->get_result();
+while ($r = $categoryRes->fetch_assoc()) {
+    $categoryOptions[] = $r['category'];
+}
+$categoryStmt->close();
+
+// Ensure the currently selected category remains visible in the dropdown
+if ($selectedCategory !== '' && !in_array($selectedCategory, $categoryOptions, true)) {
+    $categoryOptions[] = $selectedCategory;
+}
+
+$departmentOptions = [];
+if ($hasDistributions) {
+    $departmentStmt = $conn->prepare("SELECT DISTINCT d.department
+        FROM inventory_distributions d
+        INNER JOIN inventory i ON i.id = d.inventory_id
+        WHERE DATE(i.created_at) >= ? AND DATE(i.created_at) <= ?
+          AND d.department IS NOT NULL AND d.department <> ''
+        ORDER BY d.department ASC");
+    $departmentStmt->bind_param("ss", $startDate, $endDate);
+    $departmentStmt->execute();
+    $departmentRes = $departmentStmt->get_result();
+    while ($r = $departmentRes->fetch_assoc()) {
+        $departmentOptions[] = $r['department'];
+    }
+    $departmentStmt->close();
+}
+
+// Ensure the currently selected department remains visible in the dropdown
+if ($selectedDepartment !== '' && !in_array($selectedDepartment, $departmentOptions, true)) {
+    $departmentOptions[] = $selectedDepartment;
+}
+
+// Fetch inventory items created within the date range (+ optional filters)
+$sql = "SELECT i.*
+        FROM inventory i
+        WHERE DATE(i.created_at) >= ? AND DATE(i.created_at) <= ?";
+$params = [$startDate, $endDate];
+
+if ($selectedStatus !== '') {
+    $sql .= " AND i.status = ?";
+    $params[] = $selectedStatus;
+}
+
+if ($selectedCategory !== '') {
+    $sql .= " AND i.category = ?";
+    $params[] = $selectedCategory;
+}
+
+if ($hasDistributions && $selectedDepartment !== '') {
+    // Filter by department based on distribution records
+    $sql .= " AND i.id IN (
+        SELECT inventory_id
+        FROM inventory_distributions
+        WHERE department = ?
+    )";
+    $params[] = $selectedDepartment;
+}
+
+$sql .= " ORDER BY i.item_name ASC";
+
+$paramValues = $params;
+$types = str_repeat('s', count($paramValues));
+$stmt = $conn->prepare($sql);
+$bindParams = [];
+$bindParams[] = &$types;
+for ($i = 0; $i < count($paramValues); $i++) {
+    $bindParams[] = &$paramValues[$i];
+}
+call_user_func_array([$stmt, 'bind_param'], $bindParams);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
@@ -80,12 +175,26 @@ $result = $stmt->get_result();
                             <a href="reports.php" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Back
                             </a>
-                            <button onclick="window.print()" class="btn btn-success">
+                            <button onclick="printReport()" class="btn btn-success">
                                 <i class="bi bi-printer"></i> Print
                             </button>
                             <button onclick="exportToPDF()" class="btn btn-danger">
                                 <i class="bi bi-file-pdf"></i> Export PDF
                             </button>
+                        </div>
+
+                        <!-- UA Export Header (printed/exported) -->
+                        <div class="ua-export-header text-center mb-4">
+                            <div style="display:flex;align-items:center;gap:14px;">
+                                <img src="assets/img/ua-logo.png" alt="University of Antique - Hamtic Campus Logo"
+                                    style="height:70px;width:auto;" />
+                                <div style="text-align:center;flex:1;line-height:1.15;">
+                                    <div style="font-size:12px;">Republic of the Philippines</div>
+                                    <div style="font-size:14px;font-weight:700;letter-spacing:.2px;">UNIVERSITY OF
+                                        ANTIQUE–HAMTIC CAMPUS</div>
+                                    <div style="font-size:12px;">Guintas, Hamtic, Antique</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Official Report Header -->
@@ -116,8 +225,75 @@ $result = $stmt->get_result();
                         </div>
 
                         <div class="mb-3 no-print">
-                            <p class="text-muted">Showing results for: <strong
-                                    class="text-primary"><?php echo htmlspecialchars($reportPeriodDisplay); ?></strong></p>
+                            <form method="GET" action="" class="row g-2 align-items-end" id="reportFilterForm">
+                                <div class="col-lg-3 col-md-4">
+                                    <label for="filterStatus" class="form-label">Status</label>
+                                    <select id="filterStatus" name="status" class="form-select">
+                                        <option value="" <?php echo $selectedStatus === '' ? 'selected' : ''; ?>>All Statuses</option>
+                                        <?php foreach ($validStatuses as $s) { ?>
+                                            <option value="<?php echo htmlspecialchars($s); ?>" <?php echo $selectedStatus === $s ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($s); ?>
+                                            </option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+
+                                <div class="col-lg-3 col-md-4">
+                                    <label for="filterCategory" class="form-label">Category</label>
+                                    <select id="filterCategory" name="category" class="form-select">
+                                        <option value="" <?php echo $selectedCategory === '' ? 'selected' : ''; ?>>All Categories</option>
+                                        <?php foreach ($categoryOptions as $cat) { ?>
+                                            <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo $selectedCategory === $cat ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($cat); ?>
+                                            </option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+
+                                <div class="col-lg-3 col-md-4">
+                                    <label for="filterDepartment" class="form-label">Department</label>
+                                    <select id="filterDepartment" name="department" class="form-select">
+                                        <option value="" <?php echo $selectedDepartment === '' ? 'selected' : ''; ?>>All Departments</option>
+                                        <?php foreach ($departmentOptions as $dept) { ?>
+                                            <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $selectedDepartment === $dept ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($dept); ?>
+                                            </option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+
+                                <div class="col-lg-2 col-md-4">
+                                    <label for="reportMonthFrom" class="form-label">From</label>
+                                    <input type="month" id="reportMonthFrom" name="reportMonthFrom" class="form-control"
+                                        value="<?php echo htmlspecialchars($reportMonthFrom); ?>" required>
+                                </div>
+
+                                <div class="col-lg-2 col-md-4">
+                                    <label for="reportMonthTo" class="form-label">To</label>
+                                    <input type="month" id="reportMonthTo" name="reportMonthTo" class="form-control"
+                                        value="<?php echo htmlspecialchars($reportMonthTo); ?>" required>
+                                </div>
+
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-funnel"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </form>
+
+                            <p class="text-muted mt-2 mb-0">
+                                Showing results for:
+                                <strong class="text-primary"><?php echo htmlspecialchars($reportPeriodDisplay); ?></strong>
+                                <?php if ($selectedStatus !== '') { ?>
+                                    &bull; Status: <span><?php echo htmlspecialchars($selectedStatus); ?></span>
+                                <?php } ?>
+                                <?php if ($selectedCategory !== '') { ?>
+                                    &bull; Category: <span><?php echo htmlspecialchars($selectedCategory); ?></span>
+                                <?php } ?>
+                                <?php if ($selectedDepartment !== '') { ?>
+                                    &bull; Department: <span><?php echo htmlspecialchars($selectedDepartment); ?></span>
+                                <?php } ?>
+                            </p>
                         </div>
 
                         <!-- Table with inventory data - Official Format -->
@@ -301,6 +477,13 @@ $result = $stmt->get_result();
         padding: 0 !important;
     }
 
+    /* UA Export Header */
+    .ua-export-header {
+        display: block !important;
+        page-break-after: avoid;
+        margin-bottom: 15px !important;
+    }
+
     /* Official Report Header */
     .report-header {
         margin-bottom: 20px !important;
@@ -415,6 +598,10 @@ $result = $stmt->get_result();
     display: block;
 }
 
+.ua-export-header {
+    display: none;
+}
+
 .report-header {
     border-bottom: 2px solid #333;
     padding-bottom: 15px;
@@ -430,6 +617,17 @@ include 'includes/footer.php';
 <script src="assets/js/sweetalert2.all.min.js"></script>
 
 <script>
+function printReport() {
+    // Chrome "Save as PDF" may use the document title as the print header.
+    const originalTitle = document.title;
+    document.title = '';
+    try {
+        window.print();
+    } finally {
+        document.title = originalTitle;
+    }
+}
+
 // Export to PDF function - uses browser print dialog
 function exportToPDF() {
     // Use browser print dialog (user can save as PDF)
@@ -442,7 +640,7 @@ function exportToPDF() {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.print();
+            printReport();
         }
     });
 }
