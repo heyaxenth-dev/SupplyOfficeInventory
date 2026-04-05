@@ -25,6 +25,18 @@ include 'includes/sidebar.php';
 
                 <div class="card">
                     <div class="card-body mt-3">
+                        <!-- UA header: visible on browser Print only (DataTables Print/PDF use main.js header) -->
+                        <div class="ua-export-header mb-3">
+                            <div class="ua-export-header-inner">
+                                <img class="ua-export-logo" src="assets/img/ua-logo.png"
+                                    alt="University of Antique - Hamtic Campus Logo" />
+                                <div class="ua-export-text">
+                                    <div class="ua-line-1">Republic of the Philippines</div>
+                                    <div class="ua-line-2">UNIVERSITY OF ANTIQUE–HAMTIC CAMPUS</div>
+                                    <div class="ua-line-3">Guintas, Hamtic, Antique</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered table-hover align-middle" id="datatable">
                                 <thead class="table-light">
@@ -141,6 +153,91 @@ include 'includes/sidebar.php';
     </section>
 
 </main><!-- End #main -->
+
+<style>
+.ua-export-header {
+    display: none !important;
+}
+
+@media print {
+
+    html,
+    body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .sidebar,
+    .header,
+    .footer,
+    .pagetitle,
+    .back-to-top,
+    .dt-buttons,
+    .dataTables_filter,
+    .dataTables_length,
+    .dataTables_info,
+    .dataTables_paginate {
+        display: none !important;
+    }
+
+    #main.main,
+    #main {
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+    }
+
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .card-body {
+        padding: 0 !important;
+    }
+
+    .ua-export-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 12px !important;
+    }
+
+    .ua-export-header-inner {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .ua-export-logo {
+        height: 64px !important;
+        width: auto !important;
+        flex-shrink: 0;
+    }
+
+    .ua-export-text {
+        line-height: 1.2;
+        text-align: left !important;
+    }
+
+    .ua-export-text .ua-line-1,
+    .ua-export-text .ua-line-3 {
+        font-size: 11px !important;
+    }
+
+    .ua-export-text .ua-line-2 {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    /* Hide Actions column on browser Print (DataTables buttons use exportOptions in main.js) */
+    #datatable th:last-child,
+    #datatable td:last-child {
+        display: none !important;
+    }
+}
+</style>
 
 <?php 
 include 'add-inventory.php';

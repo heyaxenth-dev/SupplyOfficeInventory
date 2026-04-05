@@ -108,7 +108,7 @@
 	 * Initiate tooltips
 	 */
 	var tooltipTriggerList = [].slice.call(
-		document.querySelectorAll('[data-bs-toggle="tooltip"]')
+		document.querySelectorAll('[data-bs-toggle="tooltip"]'),
 	);
 	var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 		return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -290,17 +290,84 @@
 
 				form.classList.add('was-validated');
 			},
-			false
+			false,
 		);
 	});
 
 	/**
-	 * Initiate Datatables
+	 * Initiate Datatables (same UA header / exports as admin)
 	 */
-	// Check if datatable exists and is not already initialized
+	const UA_EXPORT_HEADER = {
+		line1: 'Republic of the Philippines',
+		line2: 'UNIVERSITY OF ANTIQUE–HAMTIC CAMPUS',
+		line3: 'Guintas, Hamtic, Antique',
+		logoDataUrl: '',
+	};
+
+	UA_EXPORT_HEADER.logoUrl = 'assets/img/ua-logo.png';
+	(function preloadUaLogoDataUrl() {
+		if (!UA_EXPORT_HEADER.logoUrl) return;
+		try {
+			const img = new Image();
+			img.onload = function () {
+				try {
+					const canvas = document.createElement('canvas');
+					canvas.width = img.naturalWidth || img.width;
+					canvas.height = img.naturalHeight || img.height;
+					const ctx = canvas.getContext('2d');
+					if (!ctx) return;
+					ctx.drawImage(img, 0, 0);
+					UA_EXPORT_HEADER.logoDataUrl = canvas.toDataURL('image/png');
+				} catch (e) {
+					// ignore
+				}
+			};
+			img.onerror = function () {};
+			img.src = UA_EXPORT_HEADER.logoUrl;
+		} catch (e) {
+			// ignore
+		}
+	})();
+
+	function uaExportHeaderPlain() {
+		return (
+			UA_EXPORT_HEADER.line1 +
+			'\n' +
+			UA_EXPORT_HEADER.line2 +
+			'\n' +
+			UA_EXPORT_HEADER.line3 +
+			'\n'
+		);
+	}
+
+	// Inventory table: last column is Actions — omit from Copy/CSV/Excel/PDF/Print
+	const INVENTORY_EXPORT_COLUMNS = [0, 1, 2, 3, 4, 5, 6, 7];
+
+	function uaExportHeaderHtml() {
+		const imgSrc =
+			UA_EXPORT_HEADER.logoDataUrl || UA_EXPORT_HEADER.logoUrl || '';
+		return (
+			'<div class="dt-ua-export-header" style="width:100%;text-align:center;margin-bottom:12px;">' +
+			'<div style="display:inline-flex;align-items:center;gap:10px;text-align:left;">' +
+			'<img src="' +
+			imgSrc +
+			'" alt="" style="height:64px;width:auto;flex-shrink:0;display:block;" />' +
+			'<div style="line-height:1.2;text-align:left;">' +
+			'<div style="font-size:11px;">' +
+			UA_EXPORT_HEADER.line1 +
+			'</div>' +
+			'<div style="font-size:13px;font-weight:700;letter-spacing:0.02em;">' +
+			UA_EXPORT_HEADER.line2 +
+			'</div>' +
+			'<div style="font-size:11px;">' +
+			UA_EXPORT_HEADER.line3 +
+			'</div>' +
+			'</div></div></div>'
+		);
+	}
+
 	const datatableElement = document.querySelector('#datatable');
 	if (datatableElement && typeof DataTable !== 'undefined') {
-		// Check if DataTable is already initialized using jQuery API
 		if (
 			typeof $ !== 'undefined' &&
 			$.fn.DataTable &&
@@ -308,17 +375,103 @@
 		) {
 			// Already initialized, skip
 		} else {
-			// Initialize DataTable
 			try {
 				new DataTable('#datatable', {
 					layout: {
 						topStart: {
-							buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+							buttons: [
+								{
+									extend: 'copyHtml5',
+									text: 'Copy',
+									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
+								},
+								{
+									extend: 'csvHtml5',
+									text: 'CSV',
+									bom: true,
+									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
+								},
+								{
+									extend: 'excelHtml5',
+									text: 'Excel',
+									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
+								},
+								{
+									extend: 'pdfHtml5',
+									text: 'PDF',
+									orientation: 'landscape',
+									pageSize: 'A4',
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
+									customize: function (doc) {
+										try {
+											const logoDataUrl = UA_EXPORT_HEADER.logoDataUrl;
+											const columns = [];
+											if (logoDataUrl) {
+												columns.push({
+													image: logoDataUrl,
+													width: 60,
+												});
+											}
+
+											columns.push({
+												stack: [
+													{
+														text: UA_EXPORT_HEADER.line1,
+														fontSize: 10,
+													},
+													{
+														text: UA_EXPORT_HEADER.line2,
+														bold: true,
+														fontSize: 12,
+													},
+													{
+														text: UA_EXPORT_HEADER.line3,
+														fontSize: 10,
+													},
+												],
+												alignment: 'left',
+											});
+											doc.content.unshift({
+												columns: [...columns],
+												margin: [0, 0, 0, 12],
+											});
+										} catch (e) {
+											// ignore
+										}
+									},
+								},
+								{
+									extend: 'print',
+									text: 'Print',
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
+									customize: function (win) {
+										try {
+											var $body = $(win.document.body);
+											$body.find('h1').remove();
+											$body.prepend(uaExportHeaderHtml());
+										} catch (e) {
+											// ignore
+										}
+									},
+								},
+							],
 						},
 					},
 				});
 			} catch (e) {
-				// If initialization fails (e.g., already initialized), ignore
 				console.log('DataTable initialization skipped:', e.message);
 			}
 		}

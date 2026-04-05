@@ -20,31 +20,45 @@ if ($tableExists->num_rows > 0) {
 ?>
 
 <style>
+/* UA header: screen — hidden (shown when printing, like inventory / reports) */
+.ua-export-header {
+    display: none !important;
+}
+
+.change-log-print-title {
+    display: none;
+}
+
 @media print {
+
+    html,
+    body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 
     #header,
     #sidebar,
     aside.sidebar,
     footer,
+    .header,
+    .footer,
+    .sidebar,
     .toggle-sidebar-btn,
+    .back-to-top,
     .no-print,
-    .dataTables_length,
-    .dataTables_filter,
-    .dataTables_info,
-    .dataTables_paginate,
-    .dt-buttons {
+    .pagetitle {
         display: none !important;
     }
 
-    body {
-        background: #fff !important;
-    }
-
+    #main.main,
     #main {
         margin: 0 !important;
-        padding: 1rem !important;
+        padding: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        position: static !important;
     }
 
     .card {
@@ -52,13 +66,80 @@ if ($tableExists->num_rows > 0) {
         box-shadow: none !important;
     }
 
+    .card-body {
+        padding: 0 !important;
+    }
+
     .table-responsive {
         overflow: visible !important;
     }
 
+    /* UA institutional header (same layout as inventory / generated report) */
+    .ua-export-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 12px !important;
+    }
+
+    .ua-export-header-inner {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .ua-export-logo {
+        height: 64px !important;
+        width: auto !important;
+        flex-shrink: 0;
+    }
+
+    .ua-export-text {
+        line-height: 1.2;
+        text-align: left !important;
+    }
+
+    .ua-export-text .ua-line-1,
+    .ua-export-text .ua-line-3 {
+        font-size: 11px !important;
+    }
+
+    .ua-export-text .ua-line-2 {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    .change-log-print-title {
+        display: block !important;
+        text-align: center;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        margin: 0 0 12px !important;
+    }
+
+    /* DataTables UI — hide in print only (keep paging/search on screen) */
+    .dataTables_length,
+    .dataTables_filter,
+    .dataTables_info,
+    .dataTables_paginate,
+    .dt-buttons,
+    .dt-length,
+    .dt-search,
+    .dt-info,
+    .dt-paging,
+    .dt-processing {
+        display: none !important;
+    }
+
+    /* DataTables 2 layout rows above/below the table (controls only) */
+    .dt-container>.dt-layout-row:not(.dt-layout-table) {
+        display: none !important;
+    }
+
     #changeLogTable {
         width: 100% !important;
-        font-size: 10pt;
+        font-size: 9pt;
+        border-collapse: collapse !important;
     }
 
     #changeLogTable th,
@@ -67,10 +148,14 @@ if ($tableExists->num_rows > 0) {
         padding: 0.35rem !important;
     }
 
+    #changeLogTable thead th {
+        background: #e8e8e8 !important;
+    }
+
     .badge {
         border: 1px solid #333 !important;
         color: #000 !important;
-        background: #f5f5f5 !important;
+        background: #f0f0f0 !important;
     }
 }
 </style>
@@ -109,8 +194,21 @@ if ($tableExists->num_rows > 0) {
                             deleted.
                         </div>
                         <?php else: ?>
+                        <div class="ua-export-header mb-3">
+                            <div class="ua-export-header-inner">
+                                <img class="ua-export-logo" src="assets/img/ua-logo.png"
+                                    alt="University of Antique - Hamtic Campus Logo" />
+                                <div class="ua-export-text">
+                                    <div class="ua-line-1">Republic of the Philippines</div>
+                                    <div class="ua-line-2">UNIVERSITY OF ANTIQUE–HAMTIC CAMPUS</div>
+                                    <div class="ua-line-3">Guintas, Hamtic, Antique</div>
+                                </div>
+                            </div>
+                        </div>
+                        <h2 class="change-log-print-title">Change Log</h2>
                         <div class="table-responsive">
-                            <table class="table table-hover" id="changeLogTable">
+                            <table class="table table-bordered table-striped table-hover align-middle"
+                                id="changeLogTable">
                                 <thead>
                                     <tr>
                                         <th>Date & Time</th>
@@ -182,7 +280,6 @@ include 'includes/footer.php';
 ?>
 
 <script>
-// Initialize DataTable if table has data
 $(document).ready(function() {
     if ($('#changeLogTable tbody tr').length > 0) {
         $('#changeLogTable').DataTable({
@@ -195,10 +292,12 @@ $(document).ready(function() {
         $('#btnPrintChangeLog').on('click', function() {
             var table = $('#changeLogTable').DataTable();
             var prevLen = table.page.len();
-            // Show all rows for printing
             table.page.len(-1).draw(false);
+            var origTitle = document.title;
+            document.title = '';
             window.print();
             setTimeout(function() {
+                document.title = origTitle;
                 table.page.len(prevLen).draw(false);
             }, 500);
         });

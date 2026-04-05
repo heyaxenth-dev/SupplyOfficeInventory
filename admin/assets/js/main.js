@@ -346,26 +346,30 @@
 		);
 	}
 
+	// Inventory table: last column is Actions — omit from Copy/CSV/Excel/PDF/Print
+	const INVENTORY_EXPORT_COLUMNS = [0, 1, 2, 3, 4, 5, 6, 7];
+
 	function uaExportHeaderHtml() {
 		const imgSrc =
 			UA_EXPORT_HEADER.logoDataUrl || UA_EXPORT_HEADER.logoUrl || '';
+		// Tight logo + text (side-by-side); centered as one group — not messageTop + prepend (that doubled the header)
 		return (
-			'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">' +
+			'<div class="dt-ua-export-header" style="width:100%;text-align:center;margin-bottom:12px;">' +
+			'<div style="display:inline-flex;align-items:center;gap:10px;text-align:left;">' +
 			'<img src="' +
 			imgSrc +
-			'" style="height:70px;width:auto;" />' +
-			'<div style="text-align:center;flex:1;line-height:1.15;">' +
-			'<div style="font-size:12px;">' +
+			'" alt="" style="height:64px;width:auto;flex-shrink:0;display:block;" />' +
+			'<div style="line-height:1.2;text-align:left;">' +
+			'<div style="font-size:11px;">' +
 			UA_EXPORT_HEADER.line1 +
 			'</div>' +
-			'<div style="font-size:14px;font-weight:700;letter-spacing:.2px;">' +
+			'<div style="font-size:13px;font-weight:700;letter-spacing:0.02em;">' +
 			UA_EXPORT_HEADER.line2 +
 			'</div>' +
-			'<div style="font-size:12px;">' +
+			'<div style="font-size:11px;">' +
 			UA_EXPORT_HEADER.line3 +
 			'</div>' +
-			'</div>' +
-			'</div>'
+			'</div></div></div>'
 		);
 	}
 
@@ -390,24 +394,35 @@
 									extend: 'copyHtml5',
 									text: 'Copy',
 									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
 								},
 								{
 									extend: 'csvHtml5',
 									text: 'CSV',
 									bom: true,
 									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
 								},
 								{
 									extend: 'excelHtml5',
 									text: 'Excel',
 									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
 								},
 								{
 									extend: 'pdfHtml5',
 									text: 'PDF',
 									orientation: 'landscape',
 									pageSize: 'A4',
-									messageTop: uaExportHeaderPlain(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
 									customize: function (doc) {
 										try {
 											const logoDataUrl = UA_EXPORT_HEADER.logoDataUrl;
@@ -435,7 +450,7 @@
 														fontSize: 10,
 													},
 												],
-												alignment: 'center',
+												alignment: 'left',
 											});
 											doc.content.unshift({
 												columns: [...columns],
@@ -449,9 +464,10 @@
 								{
 									extend: 'print',
 									text: 'Print',
-									messageTop: uaExportHeaderHtml(),
+									exportOptions: {
+										columns: INVENTORY_EXPORT_COLUMNS,
+									},
 									customize: function (win) {
-										// Ensure header is exactly at top of print body
 										try {
 											var $body = $(win.document.body);
 											$body.find('h1').remove();
