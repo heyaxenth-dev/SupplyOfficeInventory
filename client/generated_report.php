@@ -243,7 +243,7 @@ $printNumericColStart = 6 + $filterExtraCols;
                             <p class="mb-1"><strong>As at <?php echo $reportDate; ?></strong></p>
                             <p class="mb-4"><strong>GENERAL FUND (101)</strong></p>
 
-                            <div class="row text-start mb-3">
+                            <div class="row mb-3">
                                 <div class="col-md-4">
                                     <p class="mb-1">
                                         <?php echo isset($_SESSION['admin_name']) ? htmlspecialchars($_SESSION['admin_name']) : '________________'; ?>,
@@ -495,6 +495,12 @@ $printNumericColStart = 6 + $filterExtraCols;
                             </div>
                         </div>
                         <?php } ?>
+
+                        <!-- Prepared by footer (Print/PDF) -->
+                        <div class="prepared-by-block mt-4">
+                            <div><strong>Prepared by:</strong> <?php echo htmlspecialchars($name ?? ''); ?></div>
+                            <div><strong>Date:</strong> <?php echo date('F j, Y'); ?></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -619,6 +625,8 @@ $printNumericColStart = 6 + $filterExtraCols;
     .report-header .row {
         font-size: 10px !important;
         margin-bottom: 10px !important;
+        display: flex !important;
+        justify-content: center !important;
     }
 
     .report-header .text-muted {
@@ -696,6 +704,14 @@ $printNumericColStart = 6 + $filterExtraCols;
     display: block;
 }
 
+.prepared-by-block {
+    display: none;
+    font-size: 11px;
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid #333;
+}
+
 .ua-export-header {
     display: none;
 }
@@ -704,6 +720,22 @@ $printNumericColStart = 6 + $filterExtraCols;
     border-bottom: 2px solid #333;
     padding-bottom: 15px;
     margin-bottom: 20px;
+}
+
+.report-header .row {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.report-header .row .col-md-4 {
+    text-align: left;
+}
+
+@media print {
+    .prepared-by-block {
+        display: block !important;
+    }
 }
 </style>
 

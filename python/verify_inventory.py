@@ -116,7 +116,10 @@ def check_missing_categories(cursor):
         warnings.append({
             "type": "MISSING_CATEGORY",
             "severity": "WARNING",
-            "message": f"Item '{row[1]}' (Stock: {row[2]}) has no category assigned",
+            "message": (
+                f"{row[1]} (stock {row[2]}): No category is set. "
+                f"Choose a category when you edit this item."
+            ),
             "item_id": row[0],
             "item_name": row[1],
             "stock_number": row[2]
@@ -188,114 +191,43 @@ def check_stock_mismatch(cursor):
 LOW_STOCK_THRESHOLD = 10
 
 
-def _expected_status_from_quantity(quantity):
-    """Derive status label from quantity; same rules as admin/inventory.php list view."""
-    if quantity <= 0:
-        return "Out of Stock"
-    if quantity <= LOW_STOCK_THRESHOLD:
-        return "Low Stock"
-    return "In Stock"
-
-
-def _format_db_status_for_message(stored):
-    """Readable label for messages when status is NULL or blank (avoids trailing '')."""
-    s = (stored or "").strip()
-    if not s:
-        return "not set (empty)"
-    return s
-
-
 def check_status_quantity_consistency(cursor):
     """
-    Compare stored `status` to the status implied by quantity (single source of truth
-    as used on the inventory table). Catches stale DB values and high-qty rows still
-    marked Low/Out of Stock.
+    Quantity-based health checks for each inventory item.
+
+    Since the `status` column was removed from the database, this function now
+    focuses on simple, quantity-only rules that are easy for staff to read:
+    - Items with 1–LOW_STOCK_THRESHOLD units left are flagged as \"Low stock\".
     """
     errors = []
     warnings = []
 
     cursor.execute(
-        "SELECT id, item_name, stock_number, quantity, status FROM inventory"
+        "SELECT id, item_name, stock_number, quantity FROM inventory"
     )
     for row in cursor.fetchall():
-        item_id, name, sn, qty_raw, status_raw = row
+        item_id, name, sn, qty_raw = row
         try:
             quantity = int(qty_raw)
         except (TypeError, ValueError):
             quantity = 0
 
         if quantity < 0:
+            # Negative quantities are already reported by check_negative_stock
             continue
 
-        stored = (status_raw or "").strip()
-        expected = _expected_status_from_quantity(quantity)
-
-        if stored == expected:
-            continue
-
-        if stored == "Out of Stock" and quantity > 0:
-            errors.append({
-                "type": "INVALID_STATUS",
-                "severity": "ERROR",
-                "message": (
-                    f"Item '{name}' (Stock: {sn}) is marked 'Out of Stock' "
-                    f"but has quantity: {quantity}"
-                ),
-                "item_id": item_id,
-                "item_name": name,
-                "stock_number": sn,
-                "quantity": quantity,
-                "status": stored,
-            })
-            continue
-
-        if quantity == 0 and stored != "Out of Stock":
-            warnings.append({
-                "type": "STATUS_INCONSISTENCY",
-                "severity": "WARNING",
-                "message": (
-                    f"Item '{name}' (Stock: {sn}) has zero quantity but stored status is "
-                    f"'{_format_db_status_for_message(stored)}'"
-                ),
-                "item_id": item_id,
-                "item_name": name,
-                "stock_number": sn,
-                "quantity": quantity,
-                "status": stored,
-            })
-            continue
-
-        if expected == "Low Stock":
+        if 1 <= quantity <= LOW_STOCK_THRESHOLD:
             warnings.append({
                 "type": "LOW_STOCK_WARNING",
                 "severity": "WARNING",
                 "message": (
-                    f"Item '{name}' (Stock: {sn}) has quantity {quantity} "
-                    f"(expected '{expected}') but stored status is "
-                    f"'{_format_db_status_for_message(stored)}'"
+                    f"{name} (stock {sn}): Only {quantity} unit(s) left. "
+                    f"Consider reordering so this item does not run out."
                 ),
                 "item_id": item_id,
                 "item_name": name,
                 "stock_number": sn,
                 "quantity": quantity,
-                "status": stored,
-                "threshold": LOW_STOCK_THRESHOLD,
-            })
-        else:
-            warnings.append({
-                "type": "STATUS_QUANTITY_MISMATCH",
-                "severity": "WARNING",
-                "message": (
-                    f"Item '{name}' (Stock: {sn}) has quantity {quantity} "
-                    f"(expected '{expected}') but stored status is "
-                    f"'{_format_db_status_for_message(stored)}'"
-                ),
-                "item_id": item_id,
-                "item_name": name,
-                "stock_number": sn,
-                "quantity": quantity,
-                "status": stored,
-                "expected_status": expected,
                 "threshold": LOW_STOCK_THRESHOLD,
             })
 
@@ -312,7 +244,9 @@ def check_missing_stock_numbers(cursor):
         warnings.append({
             "type": "MISSING_STOCK_NUMBER",
             "severity": "WARNING",
-            "message": f"Item '{row[1]}' (ID: {row[0]}) has no stock number assigned",
+            "message": (
+                f"{row[1]}: No stock number is assigned. Add one when you edit this item."
+            ),
             "item_id": row[0],
             "item_name": row[1]
         })

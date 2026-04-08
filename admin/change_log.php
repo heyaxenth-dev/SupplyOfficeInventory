@@ -29,6 +29,10 @@ if ($tableExists->num_rows > 0) {
     display: none;
 }
 
+.change-log-prepared-by {
+    display: none;
+}
+
 @media print {
 
     html,
@@ -157,6 +161,13 @@ if ($tableExists->num_rows > 0) {
         color: #000 !important;
         background: #f0f0f0 !important;
     }
+
+    .change-log-prepared-by {
+        display: block !important;
+        font-size: 11px !important;
+        margin-bottom: 8px !important;
+        text-align: left !important;
+    }
 }
 </style>
 
@@ -206,6 +217,10 @@ if ($tableExists->num_rows > 0) {
                             </div>
                         </div>
                         <h2 class="change-log-print-title">Change Log</h2>
+                        <div class="change-log-prepared-by mb-3">
+                            <div><strong>Prepared by:</strong> <?php echo htmlspecialchars($name ?? ''); ?></div>
+                            <div><strong>Date:</strong> <?php echo date('F j, Y'); ?></div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-hover align-middle"
                                 id="changeLogTable">

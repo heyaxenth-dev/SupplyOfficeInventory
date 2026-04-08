@@ -32,9 +32,6 @@ $unit_of_measure = isset($_POST['unit_of_measure']) && trim($_POST['unit_of_meas
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
 
-// Auto-calculate status from quantity
-$status = ($quantity === 0) ? 'Out of Stock' : (($quantity <= 10) ? 'Low Stock' : 'In Stock');
-
 // Validate required fields
 if ($id <= 0) {
     echo json_encode(['success' => false, 'message' => 'Invalid item ID']);
@@ -57,7 +54,7 @@ if ($quantity < 0) {
 }
 
 // Check if item exists and get old values for audit
-$checkSql = "SELECT id, item_name, stock_number, quantity, status FROM inventory WHERE id = ?";
+$checkSql = "SELECT id, item_name, stock_number, quantity FROM inventory WHERE id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param("i", $id);
 $checkStmt->execute();
@@ -74,11 +71,11 @@ if (!$oldItem) {
 $changes = [];
 if ($oldItem['item_name'] != $item_name) $changes[] = "Item: {$oldItem['item_name']} → {$item_name}";
 if ($oldItem['quantity'] != $quantity) $changes[] = "Qty: {$oldItem['quantity']} → {$quantity}";
-if ($oldItem['status'] != $status) $changes[] = "Status: {$oldItem['status']} → {$status}";
 $changesSummary = !empty($changes) ? implode('; ', $changes) : 'Record updated';
 
 // Prepare SQL statement - last_restocked = CURDATE() matches updated_at (same DB timestamp)
-$sql = "UPDATE inventory SET item_name = ?, description = ?, category = ?, unit_of_measure = ?, unit_value = ?, quantity = ?, status = ?, last_restocked = CURDATE() WHERE id = ?";
+// Status column has been removed; quantity now fully drives on-screen badges.
+$sql = "UPDATE inventory SET item_name = ?, description = ?, category = ?, unit_of_measure = ?, unit_value = ?, quantity = ?, last_restocked = CURDATE() WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
 
@@ -88,14 +85,13 @@ if (!$stmt) {
 }
 
 // Bind parameters - s=string, i=integer, d=double/decimal
-$stmt->bind_param("sssssdis", 
+$stmt->bind_param("ssssddi", 
     $item_name, 
     $description, 
     $category, 
     $unit_of_measure, 
     $unit_value, 
     $quantity, 
-    $status, 
     $id
 );
 

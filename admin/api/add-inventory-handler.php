@@ -36,10 +36,6 @@ $unit_of_measure = isset($_POST['unit_of_measure']) && trim($_POST['unit_of_meas
 $unit_value = isset($_POST['unit_value']) && $_POST['unit_value'] !== '' ? floatval($_POST['unit_value']) : null;
 $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
 
-// last_restocked matches created_at (set in SQL via CURDATE())
-// Auto-calculate status from quantity
-$status = ($quantity === 0) ? 'Out of Stock' : (($quantity <= 10) ? 'Low Stock' : 'In Stock');
-
 // Auto-generate stock number based on item name
 // Format: First 2 letters (uppercase) + 4 random digits
 function generateStockNumber($itemName, $conn) {
@@ -106,8 +102,9 @@ if ($quantity < 0) {
 }
 
 // Prepare SQL statement - last_restocked = CURDATE() to match created_at
-$sql = "INSERT INTO inventory (item_name, description, stock_number, category, unit_of_measure, unit_value, quantity, status, last_restocked) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())";
+// Status column has been removed; quantity now fully drives on-screen badges.
+$sql = "INSERT INTO inventory (item_name, description, stock_number, category, unit_of_measure, unit_value, quantity, last_restocked) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())";
 
 $stmt = $conn->prepare($sql);
 
@@ -116,16 +113,15 @@ if (!$stmt) {
     exit;
 }
 
-// Bind parameters - s=string, i=integer, d=double/decimal (8 params, last_restocked uses CURDATE())
-$stmt->bind_param("sssssdis", 
+// Bind parameters - s=string, i=integer, d=double/decimal (7 params, last_restocked uses CURDATE())
+$stmt->bind_param("sssssdi", 
     $item_name, 
     $description, 
     $stock_number, 
     $category, 
     $unit_of_measure, 
     $unit_value, 
-    $quantity, 
-    $status
+    $quantity
 );
 
 // Execute statement

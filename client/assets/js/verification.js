@@ -11,6 +11,30 @@ $(document).ready(function () {
 	const errorList = $('#error-list');
 	const warningList = $('#warning-list');
 
+	/** Short labels for users (JSON still carries machine `type` for styling). */
+	function verificationWarningLabel(type) {
+		const labels = {
+			STATUS_QUANTITY_MISMATCH: 'Status mismatch',
+			LOW_STOCK_WARNING: 'Low stock',
+			STATUS_INCONSISTENCY: 'Should be out of stock',
+			MISSING_CATEGORY: 'Missing category',
+			MISSING_STOCK_NUMBER: 'Missing stock number',
+		};
+		return labels[type] || type || 'Warning';
+	}
+
+	function verificationErrorLabel(type) {
+		const labels = {
+			NEGATIVE_STOCK: 'Negative quantity',
+			DUPLICATE_SKU: 'Duplicate stock number',
+			ORPHAN_TRANSACTION: 'Broken transaction link',
+			STOCK_MISMATCH: 'Quantity mismatch',
+			INVALID_STATUS: 'Wrong status',
+			ORPHAN_RESERVATION: 'Broken reservation',
+		};
+		return labels[type] || type || 'Error';
+	}
+
 	// Run verification button click handler
 	runBtn.on('click', function () {
 		runVerification();
@@ -177,7 +201,7 @@ $(document).ready(function () {
                     <div class="verification-list-item verification-item-error">
                         <div class="item-content">
                             <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>
-                            <span class="badge bg-danger me-2">${error.type || 'ERROR'}</span>
+                            <span class="badge bg-danger me-2">${verificationErrorLabel(error.type)}</span>
                             <span>${error.message || 'Unknown error'}</span>
                         </div>
                         <div class="item-actions">
@@ -213,7 +237,7 @@ $(document).ready(function () {
                     <div class="verification-list-item ${itemClass}">
                         <div class="item-content">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <span class="badge me-2">${warning.type || 'WARNING'}</span>
+                            <span class="badge me-2">${verificationWarningLabel(warning.type)}</span>
                             <span>${warning.message || 'Unknown warning'}</span>
                         </div>
                         <div class="item-actions">
