@@ -20,6 +20,7 @@ include 'includes/sidebar.php';
     </div><!-- End Page Title -->
 
     <section class="section">
+        <?php require_once __DIR__ . '/../config/inventory_verification_embed.php'; ?>
         <div class="row">
             <div class="col-lg-12">
 
@@ -241,11 +242,20 @@ include 'includes/sidebar.php';
 
 <?php 
 include 'add-inventory.php';
+$nameForExport = isset($name) ? $name : '';
+?>
+<script>
+window.SOI_EXPORT_META = window.SOI_EXPORT_META || {};
+window.SOI_EXPORT_META.preparedBy = <?php echo json_encode($nameForExport, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE); ?>;
+</script>
+<?php
 include 'includes/footer.php';
 ?>
 
 <!-- SweetAlert2 -->
 <script src="assets/js/sweetalert2.all.min.js"></script>
+<link href="assets/css/verification.css" rel="stylesheet">
+<script src="assets/js/verification.js"></script>
 
 <script>
 // DataTable is initialized in main.js

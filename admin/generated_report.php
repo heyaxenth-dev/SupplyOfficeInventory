@@ -241,11 +241,11 @@ $printNumericColStart = 6 + $filterExtraCols;
                             <h3 class="fw-bold mb-2">REPORT ON THE PHYSICAL COUNT OF INVENTORIES</h3>
                             <h4 class="fw-bold mb-3">OFFICE SUPPLIES (Adjusted)</h4>
                             <p class="mb-1"><strong>As at <?php echo $reportDate; ?></strong></p>
-                            <p class="mb-4"><strong>Fund Cluster: GENERAL FUND (101)</strong></p>
+                            <p class="mb-4"><strong>GENERAL FUND (101)</strong></p>
 
                             <div class="row text-start mb-3">
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>For which</strong>
+                                    <p class="mb-1">
                                         <?php echo isset($_SESSION['admin_name']) ? htmlspecialchars($_SESSION['admin_name']) : '________________'; ?>,
                                     </p>
                                     <p class="text-muted small">(Name of accountable officer)</p>
@@ -256,7 +256,7 @@ $printNumericColStart = 6 + $filterExtraCols;
                                 </div>
                                 <div class="col-md-4">
                                     <p class="mb-1"><strong>University of Antique-Hamtic Campus,</strong></p>
-                                    <p class="text-muted small">(Bureau or Office)</p>
+                                    <p class="text-muted small">(Office)</p>
                                 </div>
                             </div>
                             <p class="mb-4"><strong>is accountable having assumed such accountability on

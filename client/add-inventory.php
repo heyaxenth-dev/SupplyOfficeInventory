@@ -42,18 +42,18 @@ require_once __DIR__ . '/../config/inventory_categories.php';
                             <label for="unit_of_measure" class="form-label">Unit of Measure</label>
                             <select class="form-select" id="unit_of_measure" name="unit_of_measure">
                                 <option value="">Select Unit</option>
-                                <option value="pc">pc</option>
-                                <option value="pc.">pc.</option>
-                                <option value="set">set</option>
-                                <option value="roll">roll</option>
-                                <option value="bot">bot</option>
-                                <option value="gallon">gallon</option>
-                                <option value="can">can</option>
-                                <option value="cake">cake</option>
-                                <option value="box">box</option>
-                                <option value="pack">pack</option>
-                                <option value="bottle">bottle</option>
                                 <option value="piece">piece</option>
+                                <option value="ream">ream</option>
+                                <option value="set">set</option>
+                                <option value="can">can</option>
+                                <option value="box">box</option>
+                                <option value="roll">roll</option>
+                                <option value="bottle">bottle</option>
+                                <option value="pack">pack</option>
+                                <option value="gallon">gallon</option>
+                                <option value="kilogram">kilogram</option>
+                                <option value="case">case</option>
+                                <option value="liters">liters</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -394,7 +394,17 @@ $(document).ready(function() {
                 selected: true
             }));
         }
-        $('#edit_unit_of_measure').val(unitOfMeasure);
+        var $editUnit = $('#edit_unit_of_measure');
+        $editUnit.find('option[data-legacy]').remove();
+        $editUnit.val(unitOfMeasure);
+        if (unitOfMeasure && $editUnit.val() !== String(unitOfMeasure)) {
+            $editUnit.append($('<option>', {
+                value: unitOfMeasure,
+                text: unitOfMeasure + ' (legacy)',
+                'data-legacy': '1',
+                selected: true
+            }));
+        }
         $('#edit_unit_value').val(unitValue);
         $('#edit_quantity').val(quantity);
         // Status is auto-calculated from quantity - update preview
@@ -697,18 +707,18 @@ $(document).ready(function() {
                             <label for="edit_unit_of_measure" class="form-label">Unit of Measure</label>
                             <select class="form-select" id="edit_unit_of_measure" name="unit_of_measure">
                                 <option value="">Select Unit</option>
-                                <option value="pc">pc</option>
-                                <option value="pc.">pc.</option>
-                                <option value="set">set</option>
-                                <option value="roll">roll</option>
-                                <option value="bot">bot</option>
-                                <option value="gallon">gallon</option>
-                                <option value="can">can</option>
-                                <option value="cake">cake</option>
-                                <option value="box">box</option>
-                                <option value="pack">pack</option>
-                                <option value="bottle">bottle</option>
                                 <option value="piece">piece</option>
+                                <option value="ream">ream</option>
+                                <option value="set">set</option>
+                                <option value="can">can</option>
+                                <option value="box">box</option>
+                                <option value="roll">roll</option>
+                                <option value="bottle">bottle</option>
+                                <option value="pack">pack</option>
+                                <option value="gallon">gallon</option>
+                                <option value="kilogram">kilogram</option>
+                                <option value="case">case</option>
+                                <option value="liters">liters</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -778,7 +788,7 @@ $(document).ready(function() {
                                 class="text-danger">*</span></label>
                         <select class="form-select" id="distribute_department" name="department" required>
                             <option value="" selected disabled>Select department</option>
-                            <option value="BSCS">BSCS</option>
+                            <option value="CCIS">CCIS</option>
                             <option value="CAFFS">CAFFS</option>
                             <option value="CTE">CTE</option>
                             <option value="Registrar">Registrar</option>

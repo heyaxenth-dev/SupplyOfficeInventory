@@ -373,6 +373,45 @@
 		);
 	}
 
+	function soiExportMeta() {
+		const m = window.SOI_EXPORT_META || {};
+		const raw = m.preparedBy != null ? String(m.preparedBy).trim() : '';
+		return {
+			preparedBy: raw || '—',
+			dateStr: new Date().toLocaleDateString(undefined, {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+			}),
+		};
+	}
+
+	function uaExportFooterPlain() {
+		const meta = soiExportMeta();
+		return 'Prepared by: ' + meta.preparedBy + '\nDate: ' + meta.dateStr + '\n';
+	}
+
+	function uaExportFooterHtml() {
+		const meta = soiExportMeta();
+		function esc(s) {
+			return String(s)
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;');
+		}
+		return (
+			'<div class="dt-ua-export-footer" style="margin-top:24px;padding-top:16px;border-top:1px solid #dee2e6;font-size:12px;text-align:left;">' +
+			'<div><strong>Prepared by:</strong> ' +
+			esc(meta.preparedBy) +
+			'</div>' +
+			'<div><strong>Date:</strong> ' +
+			esc(meta.dateStr) +
+			'</div>' +
+			'</div>'
+		);
+	}
+
 	// Check if datatable exists and is not already initialized
 	const datatableElement = document.querySelector('#datatable');
 	if (datatableElement && typeof DataTable !== 'undefined') {
@@ -394,6 +433,9 @@
 									extend: 'copyHtml5',
 									text: 'Copy',
 									messageTop: uaExportHeaderPlain(),
+									messageBottom: function () {
+										return uaExportFooterPlain();
+									},
 									exportOptions: {
 										columns: INVENTORY_EXPORT_COLUMNS,
 									},
@@ -403,6 +445,9 @@
 									text: 'CSV',
 									bom: true,
 									messageTop: uaExportHeaderPlain(),
+									messageBottom: function () {
+										return uaExportFooterPlain();
+									},
 									exportOptions: {
 										columns: INVENTORY_EXPORT_COLUMNS,
 									},
@@ -411,6 +456,9 @@
 									extend: 'excelHtml5',
 									text: 'Excel',
 									messageTop: uaExportHeaderPlain(),
+									messageBottom: function () {
+										return uaExportFooterPlain();
+									},
 									exportOptions: {
 										columns: INVENTORY_EXPORT_COLUMNS,
 									},
@@ -418,6 +466,7 @@
 								{
 									extend: 'pdfHtml5',
 									text: 'PDF',
+									title: '',
 									orientation: 'landscape',
 									pageSize: 'A4',
 									exportOptions: {
@@ -456,6 +505,21 @@
 												columns: [...columns],
 												margin: [0, 0, 0, 12],
 											});
+											const meta = soiExportMeta();
+											doc.content.push({
+												margin: [0, 16, 0, 0],
+												stack: [
+													{
+														text: 'Prepared by: ' + meta.preparedBy,
+														fontSize: 10,
+														margin: [0, 0, 0, 4],
+													},
+													{
+														text: 'Date: ' + meta.dateStr,
+														fontSize: 10,
+													},
+												],
+											});
 										} catch (e) {
 											// ignore
 										}
@@ -472,6 +536,7 @@
 											var $body = $(win.document.body);
 											$body.find('h1').remove();
 											$body.prepend(uaExportHeaderHtml());
+											$body.append(uaExportFooterHtml());
 										} catch (e) {
 											// ignore
 										}

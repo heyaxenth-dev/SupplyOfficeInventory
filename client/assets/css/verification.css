@@ -109,6 +109,19 @@ pre {
     border-left: 4px solid #ffc107;
 }
 
+.verification-item-status-mismatch .badge {
+    background-color: #6f42c1 !important;
+    color: #fff !important;
+}
+
+.verification-item-status-mismatch .bi-exclamation-triangle-fill {
+    color: #6f42c1 !important;
+}
+
+.verification-item-status-mismatch {
+    border-left: 4px solid #6f42c1;
+}
+
 /* Other warning types - default */
 .verification-item-other .badge {
     background-color: #0dcaf0 !important;

@@ -33,7 +33,8 @@ require_once __DIR__ . '/../config/inventory_categories.php';
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">Select Category</option>
                                 <?php foreach (getInventoryCategories() as $inv_cat): ?>
-                                <option value="<?php echo htmlspecialchars($inv_cat); ?>"><?php echo htmlspecialchars($inv_cat); ?></option>
+                                <option value="<?php echo htmlspecialchars($inv_cat); ?>">
+                                    <?php echo htmlspecialchars($inv_cat); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -41,18 +42,18 @@ require_once __DIR__ . '/../config/inventory_categories.php';
                             <label for="unit_of_measure" class="form-label">Unit of Measure</label>
                             <select class="form-select" id="unit_of_measure" name="unit_of_measure">
                                 <option value="">Select Unit</option>
-                                <option value="pc">pc</option>
-                                <option value="pc.">pc.</option>
-                                <option value="set">set</option>
-                                <option value="roll">roll</option>
-                                <option value="bot">bot</option>
-                                <option value="gallon">gallon</option>
-                                <option value="can">can</option>
-                                <option value="cake">cake</option>
-                                <option value="box">box</option>
-                                <option value="pack">pack</option>
-                                <option value="bottle">bottle</option>
                                 <option value="piece">piece</option>
+                                <option value="ream">ream</option>
+                                <option value="set">set</option>
+                                <option value="can">can</option>
+                                <option value="box">box</option>
+                                <option value="roll">roll</option>
+                                <option value="bottle">bottle</option>
+                                <option value="pack">pack</option>
+                                <option value="gallon">gallon</option>
+                                <option value="kilogram">kilogram</option>
+                                <option value="case">case</option>
+                                <option value="liters">liters</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -69,7 +70,8 @@ require_once __DIR__ . '/../config/inventory_categories.php';
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
                             <div class="form-control bg-light" style="padding: 0.5rem 0.75rem;">
-                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on quantity)</small>
+                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on
+                                    quantity)</small>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -177,7 +179,8 @@ $(document).ready(function() {
 
     function escHtml(s) {
         if (s === null || s === undefined) return '';
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g,
+            '&quot;');
     }
 
     function renderDistributionPreviewTable(rows, maxRows) {
@@ -185,47 +188,67 @@ $(document).ready(function() {
         if (!slice.length) {
             return '<p class="text-muted mb-0 small">No distribution records yet. Use <span class="text-success">Distribute</span> to send stock to a department.</p>';
         }
-        var html = '<div class="table-responsive" style="max-height:220px;overflow-y:auto;"><table class="table table-sm table-bordered mb-0"><thead class="table-light sticky-top"><tr><th>Date</th><th>Department</th><th class="text-end">Qty</th><th>Stock</th><th>By</th></tr></thead><tbody>';
+        var html =
+            '<div class="table-responsive" style="max-height:220px;overflow-y:auto;"><table class="table table-sm table-bordered mb-0"><thead class="table-light sticky-top"><tr><th>Date</th><th>Department</th><th class="text-end">Qty</th><th>Stock</th><th>By</th></tr></thead><tbody>';
         slice.forEach(function(r) {
             var dt = r.created_at ? new Date(r.created_at).toLocaleString() : '-';
             var stockInfo = (r.quantity_before != null && r.quantity_after != null) ?
                 (r.quantity_before + ' → ' + r.quantity_after) : '-';
-            html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r.department) + '</td><td class="text-end">' + escHtml(String(r.quantity)) + '</td><td class="small text-muted">' + escHtml(stockInfo) + '</td><td class="small">' + escHtml(r.user_name || '-') + '</td></tr>';
+            html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r.department) +
+                '</td><td class="text-end">' + escHtml(String(r.quantity)) +
+                '</td><td class="small text-muted">' + escHtml(stockInfo) + '</td><td class="small">' +
+                escHtml(r.user_name || '-') + '</td></tr>';
         });
         html += '</tbody></table></div>';
         if (maxRows && rows.length > maxRows) {
-            html += '<p class="small text-muted mt-2 mb-0">Showing ' + maxRows + ' most recent. Use <strong>Full history</strong> for all records.</p>';
+            html += '<p class="small text-muted mt-2 mb-0">Showing ' + maxRows +
+                ' most recent. Use <strong>Full history</strong> for all records.</p>';
         }
         return html;
     }
 
     function loadDistributionPreview(inventoryId) {
         $('#view_distribution_preview').html('<span class="spinner-border spinner-border-sm"></span> Loading…');
-        $.getJSON('api/get-distributions.php', { id: inventoryId }, function(res) {
+        $.getJSON('api/get-distributions.php', {
+            id: inventoryId
+        }, function(res) {
             if (res.table_missing) {
-                $('#view_distribution_preview').html('<p class="text-warning small mb-0">Run <code>config/inventory_distribution.sql</code> in your database to track distributions.</p>');
+                $('#view_distribution_preview').html(
+                    '<p class="text-warning small mb-0">Run <code>config/inventory_distribution.sql</code> in your database to track distributions.</p>'
+                );
                 return;
             }
             if (!res.success) {
-                $('#view_distribution_preview').html('<p class="text-danger small mb-0">Could not load distribution history.</p>');
+                $('#view_distribution_preview').html(
+                    '<p class="text-danger small mb-0">Could not load distribution history.</p>');
                 return;
             }
-            $('#view_distribution_preview').html(renderDistributionPreviewTable(res.distributions || [], 5));
+            $('#view_distribution_preview').html(renderDistributionPreviewTable(res.distributions || [],
+                5));
         }).fail(function() {
-            $('#view_distribution_preview').html('<p class="text-danger small mb-0">Could not load distribution history.</p>');
+            $('#view_distribution_preview').html(
+                '<p class="text-danger small mb-0">Could not load distribution history.</p>');
         });
     }
 
     function loadDistributionHistoryFull(inventoryId) {
-        $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading…</td></tr>');
-        $.getJSON('api/get-distributions.php', { id: inventoryId }, function(res) {
+        $('#distributionHistoryBody').html(
+            '<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm"></span> Loading…</td></tr>'
+        );
+        $.getJSON('api/get-distributions.php', {
+            id: inventoryId
+        }, function(res) {
             if (res.table_missing) {
-                $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-warning">Create the table using <code>config/inventory_distribution.sql</code>.</td></tr>');
+                $('#distributionHistoryBody').html(
+                    '<tr><td colspan="5" class="text-warning">Create the table using <code>config/inventory_distribution.sql</code>.</td></tr>'
+                );
                 return;
             }
             var rows = res.distributions || [];
             if (!rows.length) {
-                $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-center text-muted py-3">No distributions recorded for this item.</td></tr>');
+                $('#distributionHistoryBody').html(
+                    '<tr><td colspan="5" class="text-center text-muted py-3">No distributions recorded for this item.</td></tr>'
+                );
                 return;
             }
             var html = '';
@@ -233,11 +256,15 @@ $(document).ready(function() {
                 var dt = r.created_at ? new Date(r.created_at).toLocaleString() : '-';
                 var stockInfo = (r.quantity_before != null && r.quantity_after != null) ?
                     (r.quantity_before + ' → ' + r.quantity_after) : '-';
-                html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r.department) + '</td><td class="text-end">' + escHtml(String(r.quantity)) + '</td><td class="small">' + escHtml(stockInfo) + '</td><td>' + escHtml(r.user_name || '-') + '</td></tr>';
+                html += '<tr><td class="small">' + escHtml(dt) + '</td><td>' + escHtml(r
+                        .department) + '</td><td class="text-end">' + escHtml(String(r
+                        .quantity)) + '</td><td class="small">' + escHtml(stockInfo) +
+                    '</td><td>' + escHtml(r.user_name || '-') + '</td></tr>';
             });
             $('#distributionHistoryBody').html(html);
         }).fail(function() {
-            $('#distributionHistoryBody').html('<tr><td colspan="5" class="text-danger">Failed to load.</td></tr>');
+            $('#distributionHistoryBody').html(
+                '<tr><td colspan="5" class="text-danger">Failed to load.</td></tr>');
         });
     }
 
@@ -292,11 +319,14 @@ $(document).ready(function() {
         var lowStockThreshold = 10;
         var statusHtml = '';
         if (quantity === 0) {
-            statusHtml = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Out of Stock</span>';
+            statusHtml =
+                '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Out of Stock</span>';
         } else if (quantity <= lowStockThreshold) {
-            statusHtml = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Low Stock</span>';
+            statusHtml =
+                '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Low Stock</span>';
         } else {
-            statusHtml = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> In Stock</span>';
+            statusHtml =
+                '<span class="badge bg-success"><i class="bi bi-check-circle"></i> In Stock</span>';
         }
 
         // Number formatting function
@@ -357,15 +387,32 @@ $(document).ready(function() {
         $editCat.find('option[data-legacy]').remove();
         $editCat.val(category);
         if (category && $editCat.val() !== String(category)) {
-            $editCat.append($('<option>', { value: category, text: category + ' (legacy)', 'data-legacy': '1', selected: true }));
+            $editCat.append($('<option>', {
+                value: category,
+                text: category + ' (legacy)',
+                'data-legacy': '1',
+                selected: true
+            }));
         }
-        $('#edit_unit_of_measure').val(unitOfMeasure);
+        var $editUnit = $('#edit_unit_of_measure');
+        $editUnit.find('option[data-legacy]').remove();
+        $editUnit.val(unitOfMeasure);
+        if (unitOfMeasure && $editUnit.val() !== String(unitOfMeasure)) {
+            $editUnit.append($('<option>', {
+                value: unitOfMeasure,
+                text: unitOfMeasure + ' (legacy)',
+                'data-legacy': '1',
+                selected: true
+            }));
+        }
         $('#edit_unit_value').val(unitValue);
         $('#edit_quantity').val(quantity);
         // Status is auto-calculated from quantity - update preview
         var qty = parseInt(quantity) || 0;
         var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
-        $('#edit_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
+        $('#edit_status_preview').html(
+            '<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText +
+            '</small>');
         $('#edit_last_restocked').val(lastRestocked);
 
         // Show edit modal
@@ -376,7 +423,9 @@ $(document).ready(function() {
     $('#edit_quantity').on('input', function() {
         var qty = parseInt($(this).val()) || 0;
         var statusText = qty === 0 ? 'Out of Stock' : (qty <= 10 ? 'Low Stock' : 'In Stock');
-        $('#edit_status_preview').html('<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText + '</small>');
+        $('#edit_status_preview').html(
+            '<small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto: ' + statusText +
+            '</small>');
     });
 
     // Handle edit form submission
@@ -480,11 +529,16 @@ $(document).ready(function() {
         var maxQ = parseInt($('#distribute_quantity').attr('max'), 10) || 0;
         var reqQ = parseInt($('#distribute_quantity').val(), 10) || 0;
         if (reqQ > maxQ) {
-            Swal.fire({ icon: 'error', title: 'Invalid quantity', text: 'Cannot distribute more than available (' + maxQ + ').' });
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid quantity',
+                text: 'Cannot distribute more than available (' + maxQ + ').'
+            });
             return;
         }
 
-        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Processing...');
+        submitBtn.prop('disabled', true).html(
+            '<span class="spinner-border spinner-border-sm"></span> Processing...');
 
         $.ajax({
             url: 'api/distribute-inventory-handler.php',
@@ -501,9 +555,15 @@ $(document).ready(function() {
                         timer: 1800
                     });
                     $('#distributeInventoryModal').modal('hide');
-                    setTimeout(function() { location.reload(); }, 1800);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1800);
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: response.message || 'Distribution failed.' });
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Distribution failed.'
+                    });
                     submitBtn.prop('disabled', false).html(originalText);
                 }
             },
@@ -513,7 +573,11 @@ $(document).ready(function() {
                     var r = JSON.parse(xhr.responseText);
                     if (r.message) msg = r.message;
                 } catch (err) {}
-                Swal.fire({ icon: 'error', title: 'Error', text: msg });
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: msg
+                });
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
@@ -521,7 +585,8 @@ $(document).ready(function() {
 
     $('#distributeInventoryModal').on('hidden.bs.modal', function() {
         $('#distributeInventoryForm')[0].reset();
-        $('#distributeInventoryForm').find('button[type="submit"]').prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Confirm distribution');
+        $('#distributeInventoryForm').find('button[type="submit"]').prop('disabled', false).html(
+            '<i class="bi bi-check-lg me-1"></i>Confirm distribution');
     });
 
     // Handle delete button click
@@ -633,7 +698,8 @@ $(document).ready(function() {
                             <select class="form-select" id="edit_category" name="category" required>
                                 <option value="">Select Category</option>
                                 <?php foreach (getInventoryCategories() as $inv_cat): ?>
-                                <option value="<?php echo htmlspecialchars($inv_cat); ?>"><?php echo htmlspecialchars($inv_cat); ?></option>
+                                <option value="<?php echo htmlspecialchars($inv_cat); ?>">
+                                    <?php echo htmlspecialchars($inv_cat); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -641,18 +707,18 @@ $(document).ready(function() {
                             <label for="edit_unit_of_measure" class="form-label">Unit of Measure</label>
                             <select class="form-select" id="edit_unit_of_measure" name="unit_of_measure">
                                 <option value="">Select Unit</option>
-                                <option value="pc">pc</option>
-                                <option value="pc.">pc.</option>
-                                <option value="set">set</option>
-                                <option value="roll">roll</option>
-                                <option value="bot">bot</option>
-                                <option value="gallon">gallon</option>
-                                <option value="can">can</option>
-                                <option value="cake">cake</option>
-                                <option value="box">box</option>
-                                <option value="pack">pack</option>
-                                <option value="bottle">bottle</option>
                                 <option value="piece">piece</option>
+                                <option value="ream">ream</option>
+                                <option value="set">set</option>
+                                <option value="can">can</option>
+                                <option value="box">box</option>
+                                <option value="roll">roll</option>
+                                <option value="bottle">bottle</option>
+                                <option value="pack">pack</option>
+                                <option value="gallon">gallon</option>
+                                <option value="kilogram">kilogram</option>
+                                <option value="case">case</option>
+                                <option value="liters">liters</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -670,8 +736,10 @@ $(document).ready(function() {
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
-                            <div id="edit_status_preview" class="form-control bg-light" style="padding: 0.5rem 0.75rem;">
-                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on quantity)</small>
+                            <div id="edit_status_preview" class="form-control bg-light"
+                                style="padding: 0.5rem 0.75rem;">
+                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Auto (based on
+                                    quantity)</small>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -698,12 +766,14 @@ $(document).ready(function() {
                 <h5 class="modal-title" id="distributeInventoryModalLabel">
                     <i class="bi bi-box-arrow-right me-2"></i>Distribute to Department
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <form id="distributeInventoryForm">
                 <input type="hidden" id="distribute_item_id" name="id">
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Stock will be reduced by the quantity you send to the department.</p>
+                    <p class="text-muted small mb-3">Stock will be reduced by the quantity you send to the department.
+                    </p>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Item</label>
                         <p class="mb-0" id="distribute_item_display"></p>
@@ -714,10 +784,11 @@ $(document).ready(function() {
                         <p class="mb-0 fs-5 fw-bold text-primary" id="distribute_available_qty"></p>
                     </div>
                     <div class="mb-3">
-                        <label for="distribute_department" class="form-label">Department <span class="text-danger">*</span></label>
+                        <label for="distribute_department" class="form-label">Department <span
+                                class="text-danger">*</span></label>
                         <select class="form-select" id="distribute_department" name="department" required>
                             <option value="" selected disabled>Select department</option>
-                            <option value="BSCS">BSCS</option>
+                            <option value="CCIS">CCIS</option>
                             <option value="CAFFS">CAFFS</option>
                             <option value="CTE">CTE</option>
                             <option value="Registrar">Registrar</option>
@@ -739,13 +810,16 @@ $(document).ready(function() {
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="distribute_quantity" class="form-label">Quantity to distribute <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="distribute_quantity" name="quantity" required min="1" step="1">
+                        <label for="distribute_quantity" class="form-label">Quantity to distribute <span
+                                class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="distribute_quantity" name="quantity" required
+                            min="1" step="1">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Confirm distribution</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Confirm
+                        distribution</button>
                 </div>
             </form>
         </div>
@@ -849,14 +923,17 @@ $(document).ready(function() {
 </div>
 
 <!-- Full distribution history (all records for this item) -->
-<div class="modal fade" id="distributionHistoryModal" tabindex="-1" aria-labelledby="distributionHistoryModalLabel" aria-hidden="true">
+<div class="modal fade" id="distributionHistoryModal" tabindex="-1" aria-labelledby="distributionHistoryModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="distributionHistoryModalLabel">
-                    <i class="bi bi-list-ul me-2"></i>Distribution history — <span id="distributionHistoryModalLabelItem"></span>
+                    <i class="bi bi-list-ul me-2"></i>Distribution history — <span
+                        id="distributionHistoryModalLabelItem"></span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
                 <div class="table-responsive">

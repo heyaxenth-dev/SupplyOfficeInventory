@@ -5,16 +5,19 @@
  */
 function getInventoryCategories() {
     return [
-        'Color',
-        'Paper & Office Supplies',
-        'Writing Instruments',
-        'Electronics & Devices',
+        'Papers',
+        'Writing Tools',
         'Cleaning Supplies',
+        'Electronics & Devices',
+        'Correction Tool',
+        'Storage Tools',
         'Furniture',
-        'Art & Craft Supplies',
-        'Tools & Maintenance',
-        'Kitchen & Breakroom',
-        'Medical & Safety',
-        'Other',
+        'Kitchen Supplies',
+        'Printer Supplies',
+        'Safety Supplies',
+        'Tapes',
+        'Adhesive',
+        'Fasteners',
+        'Sorting Tools',
     ];
 }

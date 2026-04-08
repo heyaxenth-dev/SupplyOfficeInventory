@@ -206,7 +206,9 @@ $(document).ready(function () {
 						? 'verification-item-status-inconsistency'
 						: warning.type === 'LOW_STOCK_WARNING'
 							? 'verification-item-low-stock'
-							: 'verification-item-other';
+							: warning.type === 'STATUS_QUANTITY_MISMATCH'
+								? 'verification-item-status-mismatch'
+								: 'verification-item-other';
 				warningHtml += `
                     <div class="verification-list-item ${itemClass}">
                         <div class="item-content">

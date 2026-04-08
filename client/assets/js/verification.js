@@ -201,8 +201,14 @@ $(document).ready(function () {
 			let warningHtml = '<div class="verification-list">';
 			data.warnings.forEach((warning, index) => {
 				const hasItemId = warning.item_id != null && warning.item_id > 0;
-				const itemClass = warning.type === 'STATUS_INCONSISTENCY' ? 'verification-item-status-inconsistency' :
-					warning.type === 'LOW_STOCK_WARNING' ? 'verification-item-low-stock' : 'verification-item-other';
+				const itemClass =
+					warning.type === 'STATUS_INCONSISTENCY'
+						? 'verification-item-status-inconsistency'
+						: warning.type === 'LOW_STOCK_WARNING'
+							? 'verification-item-low-stock'
+							: warning.type === 'STATUS_QUANTITY_MISMATCH'
+								? 'verification-item-status-mismatch'
+								: 'verification-item-other';
 				warningHtml += `
                     <div class="verification-list-item ${itemClass}">
                         <div class="item-content">
